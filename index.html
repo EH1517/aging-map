@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>U.S. Aging Population Explorer</title>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-dark: #1a1a2e;
+    --bg-header: #16213e;
+    --bg-panel: #f8f9fa;
+    --text-primary: #e0e0e0;
+    --text-dark: #2c2c2c;
+    --accent: #e94560;
+    --accent-light: #ff6b81;
+    --border: #ddd;
+    --shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f0f0f0;
+    color: var(--text-dark);
+  }
+
+  /* Header */
+  .header {
+    background: var(--bg-header);
+    color: var(--text-primary);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    z-index: 1000;
+  }
+  .header h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .header .subtitle {
+    font-size: 13px;
+    font-weight: 300;
+    opacity: 0.7;
+  }
+
+  /* Map container */
+  .map-row {
+    display: flex;
+    height: calc(100vh - 180px);
+    min-height: 400px;
+  }
+  .map-wrapper {
+    flex: 1;
+    position: relative;
+    border-right: 1px solid #ccc;
+  }
+  .map-wrapper:last-child { border-right: none; }
+  .map-wrapper .map { height: 100%; width: 100%; }
+  .map-label {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 800;
+    background: rgba(22, 33, 62, 0.88);
+    color: #fff;
+    padding: 6px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: var(--shadow);
+  }
+
+  /* Controls bar */
+  .controls {
+    background: #fff;
+    border-top: 1px solid var(--border);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    box-shadow: 0 -2px 6px rgba(0,0,0,0.06);
+  }
+  .control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .control-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Search */
+  .search-input {
+    padding: 7px 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 14px;
+    font-family: inherit;
+    width: 240px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--accent); }
+  .search-btn {
+    padding: 7px 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s;
+  }
+  .search-btn:hover { background: var(--accent-light); }
+
+  /* Slider */
+  .slider-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 260px;
+    max-width: 420px;
+  }
+  .year-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    background: #ddd;
+    border-radius: 3px;
+    outline: none;
+  }
+  .year-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+  .year-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: none;
+  }
+  .year-display {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 48px;
+    text-align: center;
+  }
+
+  /* Radio buttons */
+  .age-toggle {
+    display: flex;
+    gap: 0;
+  }
+  .age-toggle input[type="radio"] { display: none; }
+  .age-toggle label.toggle-btn {
+    padding: 7px 16px;
+    background: #eee;
+    border: 1px solid #ccc;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: none;
+    letter-spacing: 0;
+    color: #555;
+    transition: all 0.15s;
+  }
+  .age-toggle label.toggle-btn:first-of-type { border-radius: 6px 0 0 6px; }
+  .age-toggle label.toggle-btn:last-of-type { border-radius: 0 6px 6px 0; }
+  .age-toggle input[type="radio"]:checked + label.toggle-btn {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  /* Legend */
+  .legend {
+    position: absolute;
+    bottom: 24px;
+    right: 12px;
+    z-index: 800;
+    background: rgba(255,255,255,0.92);
+    padding: 10px 14px;
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    font-size: 11px;
+  }
+  .legend-title { font-weight: 600; margin-bottom: 6px; font-size: 12px; }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 2px 0;
+  }
+  .legend-color {
+    width: 20px;
+    height: 14px;
+    border-radius: 2px;
+    border: 1px solid rgba(0,0,0,0.15);
+  }
+
+  /* Methodology panel */
+  .methodology {
+    background: #fff;
+    border-top: 1px solid var(--border);
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease;
+  }
+  .methodology.open { max-height: 600px; overflow-y: auto; }
+  .methodology-toggle {
+    display: block;
+    width: 100%;
+    padding: 10px 24px;
+    background: #f5f5f5;
+    border: none;
+    border-top: 1px solid var(--border);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.15s;
+  }
+  .methodology-toggle:hover { background: #eee; }
+  .methodology-content {
+    padding: 20px 24px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #444;
+  }
+  .methodology-content h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text-dark);
+  }
+  .methodology-content .full-width {
+    grid-column: 1 / -1;
+  }
+  .methodology-content a { color: var(--accent); }
+
+  /* Popup */
+  .leaflet-popup-content {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+    min-width: 220px;
+  }
+  .popup-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--text-dark);
+  }
+  .popup-source {
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 8px;
+    font-style: italic;
+  }
+  .popup-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 3px 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .popup-stat .label { color: #666; }
+  .popup-stat .value { font-weight: 600; }
+  .popup-trend { margin-top: 10px; }
+  .popup-trend table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+  .popup-trend th {
+    font-weight: 600;
+    text-align: center;
+    padding: 3px 4px;
+    background: #f5f5f5;
+    border-bottom: 1px solid #ddd;
+  }
+  .popup-trend td {
+    text-align: center;
+    padding: 3px 4px;
+  }
+  .popup-trend .current-year { background: #fff3cd; font-weight: 600; }
+
+  /* Tooltip */
+  .county-tooltip {
+    background: rgba(22, 33, 62, 0.9) !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 6px 12px !important;
+    font-family: 'IBM Plex Sans', sans-serif !important;
+    font-size: 13px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+  }
+  .county-tooltip::before { border-top-color: rgba(22, 33, 62, 0.9) !important; }
+
+  /* Loading overlay */
+  .loading {
+    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,0.95);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.3s;
+  }
+  .loading.hidden { opacity: 0; pointer-events: none; }
+  .loading-spinner {
+    width: 40px; height: 40px;
+    border: 4px solid #eee;
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { margin-top: 16px; font-size: 15px; color: #666; }
+  .loading-error { color: var(--accent); font-weight: 600; margin-top: 8px; }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    .map-row { flex-direction: column; height: auto; }
+    .map-wrapper { height: 45vh; min-height: 300px; border-right: none; border-bottom: 1px solid #ccc; }
+    .methodology-content { grid-template-columns: 1fr; }
+    .controls { gap: 12px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Loading county data...</div>
+  <div class="loading-error" id="loading-error"></div>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <div>
+    <h1>U.S. Aging Population Explorer</h1>
+    <div class="subtitle">County-level projections of the 65+ and 85+ population, 2025–2050</div>
+  </div>
+</div>
+
+<!-- Maps -->
+<div class="map-row">
+  <div class="map-wrapper">
+    <div class="map-label">Map A: Hauer 2019 — Bottom-Up County Projections</div>
+    <div class="map" id="mapA"></div>
+  </div>
+  <div class="map-wrapper">
+    <div class="map-label">Map B: Cooper Center 2024 — Top-Down State → County</div>
+    <div class="map" id="mapB"></div>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <div class="control-group">
+    <label>Search</label>
+    <input type="text" class="search-input" id="searchInput"
+           placeholder="County, city, or zip code..."
+           onkeydown="if(event.key==='Enter') doSearch()">
+    <button class="search-btn" onclick="doSearch()">Go</button>
+  </div>
+  <div class="control-group slider-container">
+    <label>Year</label>
+    <input type="range" class="year-slider" id="yearSlider"
+           min="0" max="5" step="1" value="0">
+    <span class="year-display" id="yearDisplay">2025</span>
+  </div>
+  <div class="control-group">
+    <label>Show</label>
+    <div class="age-toggle">
+      <input type="radio" name="ageGroup" id="age65" value="65" checked>
+      <label for="age65" class="toggle-btn">65+</label>
+      <input type="radio" name="ageGroup" id="age85" value="85">
+      <label for="age85" class="toggle-btn">85+</label>
+    </div>
+  </div>
+</div>
+
+<!-- Methodology toggle -->
+<button class="methodology-toggle" id="methToggle" onclick="toggleMethodology()">
+  ▸ Methodology &amp; Caveats
+</button>
+
+<!-- Methodology panel -->
+<div class="methodology" id="methPanel">
+  <div class="methodology-content">
+    <div>
+      <h3>Map A: Hauer 2019 (Bottom-Up)</h3>
+      <p>County-level population projections from Mathew Hauer (2019), using cohort-change ratios
+      derived from 1990–2015 Census data, controlled to the Shared Socioeconomic Pathway SSP2
+      ("Middle of the Road"). Published in <em>Scientific Data</em>.</p>
+      <p><strong>Caveat:</strong> These projections do <strong>not</strong> incorporate 2020 Census
+      results. County-level trends observed in the 2020 Census may differ from the 1990–2015
+      trajectory assumed by the model.</p>
+      <p><a href="https://doi.org/10.1038/s41597-019-0324-z" target="_blank" rel="noopener">Hauer (2019) paper</a>
+       | <a href="https://dx.doi.org/10.17605/OSF.IO/9YNFC" target="_blank" rel="noopener">Data on OSF</a></p>
+    </div>
+    <div>
+      <h3>Map B: Cooper Center 2024 (Top-Down)</h3>
+      <p>State-level age projections from the UVA Weldon Cooper Center (2024 vintage), benchmarked
+      on the 2020 Census. State totals are distributed to counties proportionally using ACS
+      2018–2022 five-year county age shares.</p>
+      <p><strong>Caveat:</strong> This method assumes each county's share of its state's elderly
+      population remains <strong>constant</strong> over the entire projection period. Counties
+      experiencing rapid growth or decline may be over- or under-projected.</p>
+      <p><a href="https://www.coopercenter.org/national-population-projections" target="_blank"
+        rel="noopener">Cooper Center Projections</a></p>
+    </div>
+    <div class="full-width">
+      <h3>General Caveats</h3>
+      <p>All population projections are uncertain. The 65+ projections are more reliable than those
+      for younger age groups because most people who will be 65+ by 2050 are already alive today.
+      The 85+ projections carry considerably more uncertainty due to mortality assumptions.
+      County-level projections are less reliable for small-population counties. These maps are for
+      informational and research purposes and should not be used as the sole basis for policy
+      decisions.</p>
+      <p>See also: <a href="https://www.census.gov/programs-surveys/popproj.html" target="_blank"
+        rel="noopener">Census Bureau National Population Projections</a></p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ---------------------------------------------------------------
+  // Globals
+  // ---------------------------------------------------------------
+  const YEARS = [2025, 2030, 2035, 2040, 2045, 2050];
+  let currentYear = 2025;
+  let currentMetric = '65'; // '65' or '85'
+
+  let hauerData = null;
+  let cooperData = null;
+  let geoData = null;
+
+  let mapA, mapB;
+  let layerA, layerB;
+  let syncing = false;
+  let highlightedFips = null;
+
+  // Color ramps — 7 classes
+  const COLORS_65 = ['#ffffcc','#fed976','#feb24c','#fd8d3c','#fc4e2a','#e31a1c','#800026'];
+  const COLORS_85 = ['#f7fbff','#c6dbef','#9ecae1','#6baed6','#3182bd','#08519c','#08306b'];
+
+  let breaks = [];  // current quantile break values
+
+  // ---------------------------------------------------------------
+  // Data loading
+  // ---------------------------------------------------------------
+  async function loadJSON(path) {
+    const resp = await fetch(path);
+    if (!resp.ok) throw new Error(`Failed to load ${path}: ${resp.status}`);
+    return resp.json();
+  }
+
+  async function init() {
+    const errEl = document.getElementById('loading-error');
+    try {
+      [hauerData, cooperData, geoData] = await Promise.all([
+        loadJSON('hauer_data.json'),
+        loadJSON('cooper_data.json'),
+        loadJSON('counties.json'),
+      ]);
+    } catch (e) {
+      errEl.textContent = e.message + ' — Make sure you have run process_data.py first.';
+      return;
+    }
+
+    initMaps();
+    initControls();
+    updateMaps();
+    document.getElementById('loading').classList.add('hidden');
+  }
+
+  // ---------------------------------------------------------------
+  // Map initialization
+  // ---------------------------------------------------------------
+  function initMaps() {
+    const center = [39.5, -98.5];
+    const zoom = 4;
+    const tileUrl = 'https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png';
+    const tileAttr = '&copy; <a href="https://carto.com/">CARTO</a> &copy; <a href="https://osm.org/copyright">OSM</a>';
+
+    mapA = L.map('mapA', { zoomControl: false }).setView(center, zoom);
+    mapB = L.map('mapB', { zoomControl: false }).setView(center, zoom);
+
+    L.tileLayer(tileUrl, { attribution: tileAttr, maxZoom: 12 }).addTo(mapA);
+    L.tileLayer(tileUrl, { attribution: tileAttr, maxZoom: 12 }).addTo(mapB);
+
+    // Label overlay on top
+    const labelUrl = 'https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png';
+    L.tileLayer(labelUrl, { maxZoom: 12, pane: 'shadowPane' }).addTo(mapA);
+    L.tileLayer(labelUrl, { maxZoom: 12, pane: 'shadowPane' }).addTo(mapB);
+
+    L.control.zoom({ position: 'topright' }).addTo(mapA);
+    L.control.zoom({ position: 'topright' }).addTo(mapB);
+
+    // Sync maps
+    mapA.on('moveend zoomend', () => { if (!syncing) syncMap(mapA, mapB); });
+    mapB.on('moveend zoomend', () => { if (!syncing) syncMap(mapB, mapA); });
+
+    // Create GeoJSON layers
+    layerA = L.geoJSON(geoData, {
+      style: () => defaultStyle(),
+      onEachFeature: (feature, layer) => bindEvents(feature, layer, 'hauer'),
+    }).addTo(mapA);
+
+    layerB = L.geoJSON(geoData, {
+      style: () => defaultStyle(),
+      onEachFeature: (feature, layer) => bindEvents(feature, layer, 'cooper'),
+    }).addTo(mapB);
+  }
+
+  function syncMap(source, target) {
+    syncing = true;
+    target.setView(source.getCenter(), source.getZoom(), { animate: false });
+    syncing = false;
+  }
+
+  function defaultStyle() {
+    return {
+      fillColor: '#ddd',
+      weight: 0.5,
+      color: '#333',
+      fillOpacity: 0.8,
+    };
+  }
+
+  // ---------------------------------------------------------------
+  // Controls
+  // ---------------------------------------------------------------
+  function initControls() {
+    const slider = document.getElementById('yearSlider');
+    slider.addEventListener('input', () => {
+      currentYear = YEARS[parseInt(slider.value)];
+      document.getElementById('yearDisplay').textContent = currentYear;
+      updateMaps();
+    });
+
+    document.querySelectorAll('input[name="ageGroup"]').forEach(r => {
+      r.addEventListener('change', () => {
+        currentMetric = r.value;
+        updateMaps();
+      });
+    });
+  }
+
+  // ---------------------------------------------------------------
+  // Color scale & styling
+  // ---------------------------------------------------------------
+  function getValues(dataset) {
+    const key = currentMetric === '65' ? 'pct_65plus' : 'pct_85plus';
+    const yr = String(currentYear);
+    const vals = [];
+    for (const fips in dataset) {
+      const entry = dataset[fips];
+      if (entry.years && entry.years[yr]) {
+        vals.push(entry.years[yr][key]);
+      }
+    }
+    return vals.sort((a, b) => a - b);
+  }
+
+  function computeBreaks() {
+    // Combine values from both datasets for consistent scale
+    const allVals = [...getValues(hauerData), ...getValues(cooperData)]
+      .sort((a, b) => a - b);
+    if (allVals.length === 0) { breaks = []; return; }
+
+    const n = COLORS_65.length;
+    breaks = [];
+    for (let i = 1; i < n; i++) {
+      const idx = Math.floor(i * allVals.length / n);
+      breaks.push(allVals[Math.min(idx, allVals.length - 1)]);
+    }
+  }
+
+  function getColor(value) {
+    const colors = currentMetric === '65' ? COLORS_65 : COLORS_85;
+    if (value == null) return '#ddd';
+    for (let i = 0; i < breaks.length; i++) {
+      if (value <= breaks[i]) return colors[i];
+    }
+    return colors[colors.length - 1];
+  }
+
+  // ---------------------------------------------------------------
+  // Update maps
+  // ---------------------------------------------------------------
+  function updateMaps() {
+    computeBreaks();
+    const key = currentMetric === '65' ? 'pct_65plus' : 'pct_85plus';
+    const yr = String(currentYear);
+
+    layerA.eachLayer(layer => {
+      const fips = layer.feature.properties.GEOID;
+      const entry = hauerData[fips];
+      const val = entry && entry.years && entry.years[yr] ? entry.years[yr][key] : null;
+      layer.setStyle({
+        fillColor: getColor(val),
+        weight: fips === highlightedFips ? 3 : 0.5,
+        color: fips === highlightedFips ? '#e94560' : '#333',
+        fillOpacity: 0.8,
+      });
+    });
+
+    layerB.eachLayer(layer => {
+      const fips = layer.feature.properties.GEOID;
+      const entry = cooperData[fips];
+      const val = entry && entry.years && entry.years[yr] ? entry.years[yr][key] : null;
+      layer.setStyle({
+        fillColor: getColor(val),
+        weight: fips === highlightedFips ? 3 : 0.5,
+        color: fips === highlightedFips ? '#e94560' : '#333',
+        fillOpacity: 0.8,
+      });
+    });
+
+    updateLegends();
+  }
+
+  // ---------------------------------------------------------------
+  // Legends
+  // ---------------------------------------------------------------
+  function updateLegends() {
+    ['mapA', 'mapB'].forEach(id => {
+      let el = document.getElementById(id + '-legend');
+      if (el) el.remove();
+
+      el = document.createElement('div');
+      el.id = id + '-legend';
+      el.className = 'legend';
+      const colors = currentMetric === '65' ? COLORS_65 : COLORS_85;
+      const metricLabel = currentMetric === '65' ? '% Age 65+' : '% Age 85+';
+
+      let html = `<div class="legend-title">${metricLabel} (${currentYear})</div>`;
+      for (let i = 0; i < colors.length; i++) {
+        const lo = i === 0 ? '0' : breaks[i - 1].toFixed(1);
+        const hi = i < breaks.length ? breaks[i].toFixed(1) : '+';
+        const rangeLabel = i < breaks.length ? `${lo}–${hi}%` : `${lo}%+`;
+        html += `<div class="legend-item">
+          <div class="legend-color" style="background:${colors[i]}"></div>
+          <span>${rangeLabel}</span>
+        </div>`;
+      }
+      el.innerHTML = html;
+      document.getElementById(id).appendChild(el);
+    });
+  }
+
+  // ---------------------------------------------------------------
+  // Events: hover & click
+  // ---------------------------------------------------------------
+  function bindEvents(feature, layer, source) {
+    const fips = feature.properties.GEOID;
+
+    layer.on('mouseover', function(e) {
+      this.setStyle({ weight: 2, color: '#222' });
+      this.bringToFront();
+      const data = source === 'hauer' ? hauerData : cooperData;
+      const entry = data[fips];
+      const key = currentMetric === '65' ? 'pct_65plus' : 'pct_85plus';
+      const yr = String(currentYear);
+      const name = (entry && entry.name) || feature.properties.NAME || fips;
+      let val = '--';
+      if (entry && entry.years && entry.years[yr]) {
+        val = entry.years[yr][key].toFixed(1) + '%';
+      }
+      const metricLabel = currentMetric === '65' ? '65+' : '85+';
+      layer.bindTooltip(`<strong>${name}</strong><br>${val} age ${metricLabel}`, {
+        className: 'county-tooltip',
+        sticky: true
+      }).openTooltip(e.latlng);
+    });
+
+    layer.on('mouseout', function() {
+      this.setStyle({
+        weight: fips === highlightedFips ? 3 : 0.5,
+        color: fips === highlightedFips ? '#e94560' : '#333',
+      });
+      this.closeTooltip();
+    });
+
+    layer.on('click', function() {
+      showPopup(fips, this, source);
+    });
+  }
+
+  function showPopup(fips, layer, source) {
+    const data = source === 'hauer' ? hauerData : cooperData;
+    const entry = data[fips];
+    if (!entry) return;
+
+    const name = entry.name || fips;
+    const sourceName = source === 'hauer' ? 'Hauer 2019 (Bottom-Up)' : 'Cooper Center 2024 (Top-Down)';
+    const yr = String(currentYear);
+    const d = entry.years[yr];
+
+    let html = `<div class="popup-title">${name}</div>`;
+    html += `<div class="popup-source">${sourceName}</div>`;
+
+    if (d) {
+      html += `<div class="popup-stat"><span class="label">Total Population</span><span class="value">${d.pop_total.toLocaleString()}</span></div>`;
+      html += `<div class="popup-stat"><span class="label">Age 65+</span><span class="value">${d.pct_65plus}% (${d.pop_65plus.toLocaleString()})</span></div>`;
+      html += `<div class="popup-stat"><span class="label">Age 85+</span><span class="value">${d.pct_85plus}% (${d.pop_85plus.toLocaleString()})</span></div>`;
+    }
+
+    // Trend table
+    html += `<div class="popup-trend"><table><tr><th></th>`;
+    for (const y of YEARS) html += `<th>${y}</th>`;
+    html += '</tr><tr><td style="font-weight:600">65+</td>';
+    for (const y of YEARS) {
+      const yd = entry.years[String(y)];
+      const cls = y === currentYear ? ' class="current-year"' : '';
+      html += `<td${cls}>${yd ? yd.pct_65plus + '%' : '—'}</td>`;
+    }
+    html += '</tr><tr><td style="font-weight:600">85+</td>';
+    for (const y of YEARS) {
+      const yd = entry.years[String(y)];
+      const cls = y === currentYear ? ' class="current-year"' : '';
+      html += `<td${cls}>${yd ? yd.pct_85plus + '%' : '—'}</td>`;
+    }
+    html += '</tr></table></div>';
+
+    layer.bindPopup(html, { maxWidth: 380 }).openPopup();
+  }
+
+  // ---------------------------------------------------------------
+  // Search
+  // ---------------------------------------------------------------
+  async function doSearch() {
+    const query = document.getElementById('searchInput').value.trim();
+    if (!query) return;
+
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=us&limit=1`;
+      const resp = await fetch(url, {
+        headers: { 'User-Agent': 'aging-map-explorer/1.0' }
+      });
+      const results = await resp.json();
+      if (results.length === 0) {
+        alert('Location not found. Try a county name like "Maricopa County, AZ".');
+        return;
+      }
+      const lat = parseFloat(results[0].lat);
+      const lon = parseFloat(results[0].lon);
+      mapA.setView([lat, lon], 8);
+      // mapB syncs automatically
+
+      // Try to find the county containing this point
+      highlightedFips = findCountyAtPoint(lat, lon);
+      updateMaps();
+
+    } catch (e) {
+      console.error('Search error:', e);
+      alert('Search failed. Check your internet connection.');
+    }
+  }
+  // Expose to onclick
+  window.doSearch = doSearch;
+
+  function findCountyAtPoint(lat, lon) {
+    // Simple point-in-bounds check using layer bounds
+    let closest = null;
+    let closestDist = Infinity;
+    const pt = L.latLng(lat, lon);
+
+    layerA.eachLayer(layer => {
+      if (layer.getBounds && layer.getBounds().contains(pt)) {
+        const center = layer.getBounds().getCenter();
+        const dist = pt.distanceTo(center);
+        if (dist < closestDist) {
+          closestDist = dist;
+          closest = layer.feature.properties.GEOID;
+        }
+      }
+    });
+    return closest;
+  }
+
+  // ---------------------------------------------------------------
+  // Methodology panel
+  // ---------------------------------------------------------------
+  function toggleMethodology() {
+    const panel = document.getElementById('methPanel');
+    const btn = document.getElementById('methToggle');
+    panel.classList.toggle('open');
+    btn.textContent = panel.classList.contains('open')
+      ? '▾ Methodology & Caveats'
+      : '▸ Methodology & Caveats';
+  }
+  window.toggleMethodology = toggleMethodology;
+
+  // ---------------------------------------------------------------
+  // Boot
+  // ---------------------------------------------------------------
+  init();
+})();
+</script>
+</body>
+</html>
