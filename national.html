@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>U.S. National Aging Projections — Population Pyramid</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-header: #16213e;
+    --text-primary: #e0e0e0;
+    --text-dark: #2c2c2c;
+    --accent: #e94560;
+    --accent-light: #ff6b81;
+    --elder85: #8b5cf6;
+    --bar-mid: #9ecae1;
+    --bar-young: #3182bd;
+    --bar-elder: #e94560;
+    --bookend-young: #3182bd;
+    --bookend-old: #8b5cf6;
+    --shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+  html, body {
+    height: 100%;
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f0f0f0;
+    color: var(--text-dark);
+  }
+
+  .header {
+    background: var(--bg-header);
+    color: var(--text-primary);
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .header h1 { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+  .header .subtitle { font-size: 13px; font-weight: 300; opacity: 0.7; }
+  .header a {
+    color: var(--accent-light);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .header a:hover { text-decoration: underline; }
+
+  /* Stat banner */
+  .stats-banner {
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 48px;
+    flex-wrap: wrap;
+    box-shadow: var(--shadow);
+  }
+  .stat-card { text-align: center; }
+  .stat-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #888;
+    margin-bottom: 4px;
+  }
+  .stat-value {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  .stat-sub {
+    font-size: 13px;
+    color: #888;
+    margin-top: 2px;
+  }
+  .stat-value.pop { color: var(--text-dark); }
+  .stat-value.elder { color: var(--accent); }
+  .stat-value.elder85 { color: var(--elder85); }
+
+  /* Main content */
+  .content {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  /* Slider */
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+    background: #fff;
+    padding: 16px 24px;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+  }
+  .slider-row label {
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #555;
+  }
+  .year-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 6px;
+    background: #ddd;
+    border-radius: 3px;
+    outline: none;
+  }
+  .year-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+  .year-slider::-moz-range-thumb {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: none;
+  }
+  .year-display {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 60px;
+    text-align: center;
+  }
+  .play-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 36px; height: 36px;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .play-btn:hover { background: var(--accent-light); }
+
+  /* Charts row */
+  .charts-row {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 24px;
+    align-items: stretch;
+  }
+
+  .pyramid-container {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    flex: 3;
+    min-width: 0;
+  }
+  .bookend-container {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: var(--shadow);
+    padding: 24px;
+    flex: 2;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .chart-title {
+    font-size: 15px;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 16px;
+    color: var(--text-dark);
+  }
+  .pyramid-svg, .bookend-svg {
+    width: 100%;
+    display: block;
+    flex: 1;
+  }
+
+  /* Source */
+  .source-note {
+    text-align: center;
+    font-size: 12px;
+    color: #999;
+    padding: 8px;
+  }
+  .source-note a { color: var(--accent); }
+
+  /* Loading */
+  .loading {
+    position: fixed; inset: 0;
+    background: rgba(255,255,255,0.95);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    z-index: 9999;
+    transition: opacity 0.3s;
+  }
+  .loading.hidden { opacity: 0; pointer-events: none; }
+  .loading-spinner {
+    width: 40px; height: 40px;
+    border: 4px solid #eee; border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { margin-top: 16px; font-size: 15px; color: #666; }
+
+  @media (max-width: 800px) {
+    .charts-row { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Loading projection data...</div>
+</div>
+
+<div class="header">
+  <div>
+    <h1>U.S. National Aging Projections</h1>
+    <div class="subtitle">Census Bureau 2023 National Population Projections, 2022 &ndash; 2100</div>
+  </div>
+  <a href="index.html">&larr; Back to County Maps</a>
+</div>
+
+<div class="stats-banner">
+  <div class="stat-card">
+    <div class="stat-label">Year</div>
+    <div class="stat-value pop" id="statYear">2022</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Total Population</div>
+    <div class="stat-value pop" id="statPop">333.3M</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Age 65+</div>
+    <div class="stat-value elder" id="stat65">17.3%</div>
+    <div class="stat-sub" id="stat65n">57.8M people</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Age 85+</div>
+    <div class="stat-value elder85" id="stat85">1.9%</div>
+    <div class="stat-sub" id="stat85n">6.5M people</div>
+  </div>
+</div>
+
+<div class="content">
+  <div class="slider-row">
+    <label>Year</label>
+    <button class="play-btn" id="playBtn" title="Animate">&#9654;</button>
+    <input type="range" class="year-slider" id="yearSlider" min="0" max="16" step="1" value="0">
+    <span class="year-display" id="yearDisplay">2022</span>
+  </div>
+
+  <div class="charts-row">
+    <div class="pyramid-container">
+      <div class="chart-title">Population by Age Group</div>
+      <svg id="pyramid" class="pyramid-svg"></svg>
+    </div>
+    <div class="bookend-container">
+      <div class="chart-title">The Bookends: Youngest vs. Oldest</div>
+      <svg id="bookend" class="bookend-svg"></svg>
+    </div>
+  </div>
+
+  <div class="source-note">
+    Source: U.S. Census Bureau, 2023 National Population Projections (Main Series, Table 2). Population in thousands.<br>
+    <a href="https://www.census.gov/programs-surveys/popproj.html" target="_blank" rel="noopener">census.gov/popproj</a>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  let D = null;
+  let currentIdx = 0;
+  let playing = false;
+  let playTimer = null;
+
+  // Age groups for the main pyramid (collapsed)
+  const PYRAMID_GROUPS = ['Under 5', '5-17', '18-24', '25-44', '45-64', '65+'];
+
+  async function init() {
+    try {
+      const resp = await fetch('national_data.json');
+      D = await resp.json();
+    } catch(e) {
+      document.querySelector('.loading-text').textContent = 'Failed to load national_data.json';
+      return;
+    }
+    setupSlider();
+    update();
+    document.getElementById('loading').classList.add('hidden');
+  }
+
+  function setupSlider() {
+    const slider = document.getElementById('yearSlider');
+    slider.max = D.years.length - 1;
+    slider.addEventListener('input', () => {
+      currentIdx = parseInt(slider.value);
+      update();
+    });
+    document.getElementById('playBtn').addEventListener('click', togglePlay);
+  }
+
+  function togglePlay() {
+    playing = !playing;
+    const btn = document.getElementById('playBtn');
+    if (playing) {
+      btn.innerHTML = '&#9646;&#9646;';
+      playTimer = setInterval(() => {
+        currentIdx++;
+        if (currentIdx >= D.years.length) { currentIdx = 0; }
+        document.getElementById('yearSlider').value = currentIdx;
+        update();
+      }, 600);
+    } else {
+      btn.innerHTML = '&#9654;';
+      clearInterval(playTimer);
+    }
+  }
+
+  function fmt(n) {
+    if (n >= 1000) return (n / 1000).toFixed(1) + 'M';
+    return Math.round(n) + 'K';
+  }
+
+  function update() {
+    const year = D.years[currentIdx];
+    const i = currentIdx;
+
+    document.getElementById('yearDisplay').textContent = year;
+    document.getElementById('statYear').textContent = year;
+    document.getElementById('statPop').textContent = fmt(D.total[i]);
+    document.getElementById('stat65').textContent = D.pct_65plus[i].toFixed(1) + '%';
+    document.getElementById('stat85').textContent = D.pct_85plus[i].toFixed(1) + '%';
+    document.getElementById('stat65n').textContent = fmt(D.total_65plus[i]) + ' people';
+    document.getElementById('stat85n').textContent = fmt(D.total_85plus[i]) + ' people';
+
+    drawPyramid(i);
+    drawBookend(i);
+  }
+
+  // ---------------------------------------------------------------
+  // Main Pyramid — single horizontal bars, no sex split
+  // ---------------------------------------------------------------
+  function drawPyramid(idx) {
+    const svg = document.getElementById('pyramid');
+    const groups = PYRAMID_GROUPS;
+    const n = groups.length;
+
+    // Get values for this year
+    const vals = groups.map(ag => D.total_groups[ag][idx]);
+    const total = D.total[idx];
+
+    // Find global max across all years for stable scaling
+    let maxVal = 0;
+    for (const ag of groups) {
+      for (let j = 0; j < D.years.length; j++) {
+        maxVal = Math.max(maxVal, D.total_groups[ag][j]);
+      }
+    }
+
+    const W = 520, H = 280;
+    const ml = 70, mr = 80, mt = 8, mb = 8, gap = 10;
+    const usableW = W - ml - mr;
+    const barH = (H - mt - mb - (n - 1) * gap) / n;
+    const scale = usableW / maxVal;
+
+    function barColor(ag) {
+      if (ag === 'Under 5') return 'var(--bar-young)';
+      if (ag === '65+') return 'var(--bar-elder)';
+      return 'var(--bar-mid)';
+    }
+
+    let html = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Sans, sans-serif">`;
+
+    for (let i = 0; i < n; i++) {
+      const ag = groups[n - 1 - i]; // oldest at top
+      const val = D.total_groups[ag][idx];
+      const y = mt + i * (barH + gap);
+      const w = val * scale;
+
+      // Bar
+      html += `<rect x="${ml}" y="${y}" width="${w}" height="${barH}" fill="${barColor(ag)}" rx="3"/>`;
+
+      // Age label — left of bar
+      html += `<text x="${ml - 8}" y="${y + barH / 2 + 5}" text-anchor="end" font-size="13" font-weight="${(ag === 'Under 5' || ag === '65+') ? '700' : '500'}" fill="${(ag === 'Under 5' || ag === '65+') ? barColor(ag) : '#555'}">${ag}</text>`;
+
+      // Population label — right of bar
+      html += `<text x="${ml + w + 6}" y="${y + barH / 2 + 5}" text-anchor="start" font-size="12" font-weight="600" fill="#555">${fmt(val)}</text>`;
+    }
+
+    html += '</svg>';
+    svg.innerHTML = html;
+  }
+
+  // ---------------------------------------------------------------
+  // Bookend Chart — Under 5 vs 85+
+  // ---------------------------------------------------------------
+  function drawBookend(idx) {
+    const svg = document.getElementById('bookend');
+
+    const u5 = D.total_groups['Under 5'][idx];
+    const e85 = D.total_groups['85+'][idx];
+    const total = D.total[idx];
+    const pctU5 = (100 * u5 / total).toFixed(1);
+    const pctE85 = (100 * e85 / total).toFixed(1);
+
+    // Find global max across all years for stable scaling
+    let maxVal = 0;
+    for (let j = 0; j < D.years.length; j++) {
+      maxVal = Math.max(maxVal, D.total_groups['Under 5'][j], D.total_groups['85+'][j]);
+    }
+
+    const W = 360, H = 280;
+    const mt = 30, mb = 20, mx = 30;
+    const barMaxH = H - mt - mb;
+    const barW = 80;
+    const scale = barMaxH / maxVal;
+    const spacing = 60;
+
+    // Two bars side by side, growing upward from bottom
+    const u5H = u5 * scale;
+    const e85H = e85 * scale;
+    const baseY = H - mb;
+    const cx = W / 2;
+    const u5X = cx - spacing / 2 - barW;
+    const e85X = cx + spacing / 2;
+
+    // Crossover indicator
+    const crossed = e85 >= u5;
+    const crossYear = findCrossYear();
+
+    let html = `<svg viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Sans, sans-serif">`;
+
+    // Under 5 bar
+    html += `<rect x="${u5X}" y="${baseY - u5H}" width="${barW}" height="${u5H}" fill="var(--bookend-young)" rx="4"/>`;
+
+    // 85+ bar
+    html += `<rect x="${e85X}" y="${baseY - e85H}" width="${barW}" height="${e85H}" fill="var(--bookend-old)" rx="4"/>`;
+
+    // Labels below bars
+    html += `<text x="${u5X + barW/2}" y="${baseY + 14}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--bookend-young)">Under 5</text>`;
+    html += `<text x="${e85X + barW/2}" y="${baseY + 14}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--bookend-old)">85+</text>`;
+
+    // Population numbers above bars
+    html += `<text x="${u5X + barW/2}" y="${baseY - u5H - 18}" text-anchor="middle" font-size="14" font-weight="700" fill="var(--bookend-young)">${fmt(u5)}</text>`;
+    html += `<text x="${e85X + barW/2}" y="${baseY - e85H - 18}" text-anchor="middle" font-size="14" font-weight="700" fill="var(--bookend-old)">${fmt(e85)}</text>`;
+
+    // Percentages above population
+    html += `<text x="${u5X + barW/2}" y="${baseY - u5H - 4}" text-anchor="middle" font-size="11" fill="#888">${pctU5}%</text>`;
+    html += `<text x="${e85X + barW/2}" y="${baseY - e85H - 4}" text-anchor="middle" font-size="11" fill="#888">${pctE85}%</text>`;
+
+    // Crossover annotation
+    if (crossed) {
+      html += `<text x="${cx}" y="${16}" text-anchor="middle" font-size="12" font-weight="600" fill="var(--bookend-old)">85+ surpassed Under 5 (~${crossYear})</text>`;
+    } else {
+      // Show ratio
+      const ratio = (e85 / u5 * 100).toFixed(0);
+      html += `<text x="${cx}" y="${16}" text-anchor="middle" font-size="12" font-weight="500" fill="#888">85+ is ${ratio}% of Under 5</text>`;
+    }
+
+    html += '</svg>';
+    svg.innerHTML = html;
+  }
+
+  function findCrossYear() {
+    for (let j = 0; j < D.years.length; j++) {
+      if (D.total_groups['85+'][j] >= D.total_groups['Under 5'][j]) {
+        // Interpolate between this year and the previous
+        if (j === 0) return D.years[0];
+        const prev85 = D.total_groups['85+'][j-1];
+        const prevU5 = D.total_groups['Under 5'][j-1];
+        const cur85 = D.total_groups['85+'][j];
+        const curU5 = D.total_groups['Under 5'][j];
+        // Linear interp: find t where prev85 + t*(cur85-prev85) = prevU5 + t*(curU5-prevU5)
+        const denom = (cur85 - prev85) - (curU5 - prevU5);
+        if (Math.abs(denom) < 0.01) return D.years[j];
+        const t = (prevU5 - prev85) / denom;
+        const crossYear = Math.round(D.years[j-1] + t * (D.years[j] - D.years[j-1]));
+        return crossYear;
+      }
+    }
+    return null;
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
