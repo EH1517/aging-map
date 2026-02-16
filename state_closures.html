@@ -385,7 +385,9 @@ function buildPopup(abbr, scenario, year) {
   if (isEnrollProj) {
     const srcLabel = d.enrollment_proj_source === 'state' ? 'State Agency' : 'NCES';
     const lastNative = d.enrollment_proj_last_native_year || '?';
-    html += '<div style="font-size:10px;color:#888;font-style:italic;margin-bottom:6px;">Source: ' + srcLabel + ' (native data through ' + lastNative + ')' + (yr.extrapolated ? ' &mdash; <span style="color:var(--orange)">extrapolated</span>' : '') + '</div>';
+    const srcUrl = d.enrollment_proj_url || '';
+    const srcLink = srcUrl ? '<a href="' + srcUrl + '" target="_blank" style="color:var(--accent);text-decoration:underline;">' + srcLabel + '</a>' : srcLabel;
+    html += '<div style="font-size:10px;color:#888;font-style:italic;margin-bottom:6px;">Source: ' + srcLink + ' (native data through ' + lastNative + ')' + (yr.extrapolated ? ' &mdash; <span style="color:var(--orange)">extrapolated</span>' : '') + '</div>';
   }
 
   html += '<div class="popup-stat"><span class="plbl">Current Schools</span><span class="pval">' + fmt(d.current_schools) + '</span></div>';
