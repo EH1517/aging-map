@@ -206,6 +206,8 @@
       <label class="tbtn" for="scenCensus">Census Bureau</label>
       <input type="radio" name="scenario" id="scenTrend" value="state_trend">
       <label class="tbtn" for="scenTrend">State Trend</label>
+      <input type="radio" name="scenario" id="scenEnroll" value="enrollment_proj">
+      <label class="tbtn" for="scenEnroll">NCES / State</label>
     </div>
   </div>
 
@@ -235,6 +237,7 @@
       <h3>Fertility Scenarios</h3>
       <p><strong>Census Bureau:</strong> Applies the Census 2023 National Population Projections Under-5 trajectory uniformly to every state's 2022 fertility rate. This scenario assumes all states follow the same national birth decline curve.</p>
       <p><strong>State Trend:</strong> Extrapolates each state's own 2005&ndash;2022 fertility decline rate forward, with a floor of 35 births per 1,000 women 15&ndash;44. States like Utah and Idaho (steep recent declines) diverge sharply from the Census scenario.</p>
+      <p><strong>NCES / State:</strong> Uses actual enrollment projections from NCES (all 50 states + DC, state level, to 2050) and state agency sources where available (CA DOF, IA DOE, MD Dept of Planning, PA DOE). These projections incorporate migration, existing pipeline effects, and demographic models&mdash;not just fertility. States whose projections end before 2040 are linearly extrapolated. An asterisk (*) in the trend table marks extrapolated years.</p>
     </div>
     <div>
       <h3>Pipeline Lag Model</h3>
@@ -343,13 +346,15 @@ function updateLegend(metric) {
 }
 
 function updateStats(scenario, year) {
-  const scenarioLabel = scenario === 'census' ? 'Census Bureau' : 'State Trend';
-  document.getElementById('statScenario').textContent = scenarioLabel + ' ' + year;
+  const scenarioLabels = {census: 'Census Bureau', state_trend: 'State Trend', enrollment_proj: 'NCES / State Projections'};
+  document.getElementById('statScenario').textContent = (scenarioLabels[scenario] || scenario) + ' ' + year;
 
   let totalDecline = 0, totalClosures = 0, totalEnrollment = 0, totalProjected = 0, count = 0;
   for (const abbr in stateData) {
     const d = stateData[abbr];
-    const yr = d.scenarios[scenario][String(year)];
+    const scenData = d.scenarios[scenario];
+    if (!scenData) continue;
+    const yr = scenData[String(year)];
     if (!yr) continue;
     totalDecline += yr.enrollment_decline_pct * d.current_enrollment;
     totalEnrollment += d.current_enrollment;
@@ -369,20 +374,34 @@ function updateStats(scenario, year) {
 function buildPopup(abbr, scenario, year) {
   const d = stateData[abbr];
   if (!d) return 'No data';
-  const yr = d.scenarios[scenario][String(year)];
+  const scenData = d.scenarios[scenario];
+  if (!scenData) return 'No data for this scenario';
+  const yr = scenData[String(year)];
   if (!yr) return 'No data for ' + year;
 
+  const isEnrollProj = scenario === 'enrollment_proj';
   let html = '<div class="popup-title">' + d.state + ' (' + abbr + ')</div>';
+
+  if (isEnrollProj) {
+    const srcLabel = d.enrollment_proj_source === 'state' ? 'State Agency' : 'NCES';
+    const lastNative = d.enrollment_proj_last_native_year || '?';
+    html += '<div style="font-size:10px;color:#888;font-style:italic;margin-bottom:6px;">Source: ' + srcLabel + ' (native data through ' + lastNative + ')' + (yr.extrapolated ? ' &mdash; <span style="color:var(--orange)">extrapolated</span>' : '') + '</div>';
+  }
 
   html += '<div class="popup-stat"><span class="plbl">Current Schools</span><span class="pval">' + fmt(d.current_schools) + '</span></div>';
   html += '<div class="popup-stat"><span class="plbl">Current Enrollment</span><span class="pval">' + fmt(d.current_enrollment) + '</span></div>';
-  html += '<div class="popup-stat"><span class="plbl">Fertility Rate (2022)</span><span class="pval">' + d.rate_2022.toFixed(1) + '</span></div>';
-  html += '<div class="popup-stat"><span class="plbl">2005-2022 Decline</span><span class="pval">' + (d.decline_2005_2022 * 100).toFixed(1) + '%</span></div>';
+
+  if (!isEnrollProj) {
+    html += '<div class="popup-stat"><span class="plbl">Fertility Rate (2022)</span><span class="pval">' + d.rate_2022.toFixed(1) + '</span></div>';
+    html += '<div class="popup-stat"><span class="plbl">2005-2022 Decline</span><span class="pval">' + (d.decline_2005_2022 * 100).toFixed(1) + '%</span></div>';
+  }
 
   html += '<div style="margin-top:8px;padding-top:6px;border-top:2px solid #e94560">';
-  html += '<div class="popup-stat"><span class="plbl">Projected Fertility (' + year + ')</span><span class="pval">' + yr.fertility_rate.toFixed(1) + '</span></div>';
-  html += '<div class="popup-stat"><span class="plbl">Birth Decline</span><span class="pval" style="color:var(--red)">' + yr.birth_decline_pct.toFixed(1) + '%</span></div>';
-  html += '<div class="popup-stat"><span class="plbl">Pipeline Fraction</span><span class="pval">' + (yr.post_2022_fraction * 100).toFixed(0) + '%</span></div>';
+  if (!isEnrollProj) {
+    html += '<div class="popup-stat"><span class="plbl">Projected Fertility (' + year + ')</span><span class="pval">' + yr.fertility_rate.toFixed(1) + '</span></div>';
+    html += '<div class="popup-stat"><span class="plbl">Birth Decline</span><span class="pval" style="color:var(--red)">' + yr.birth_decline_pct.toFixed(1) + '%</span></div>';
+    html += '<div class="popup-stat"><span class="plbl">Pipeline Fraction</span><span class="pval">' + (yr.post_2022_fraction * 100).toFixed(0) + '%</span></div>';
+  }
   html += '<div class="popup-stat"><span class="plbl">Enrollment Decline</span><span class="pval" style="color:var(--red)">' + yr.enrollment_decline_pct.toFixed(1) + '%</span></div>';
   html += '<div class="popup-stat"><span class="plbl">Projected Enrollment</span><span class="pval">' + fmt(yr.projected_enrollment) + '</span></div>';
   html += '<div class="popup-stat"><span class="plbl">Expected Closures</span><span class="pval" style="color:var(--orange)">' + yr.expected_closures.toFixed(0) + ' (' + yr.expected_closures_pct.toFixed(1) + '%)</span></div>';
@@ -395,13 +414,14 @@ function buildPopup(abbr, scenario, year) {
   }
   html += '</tr><tr><td style="font-weight:600">Decline</td>';
   for (const y of YEARS) {
-    const yd = d.scenarios[scenario][String(y)];
+    const yd = scenData[String(y)];
     const v = yd ? yd.enrollment_decline_pct.toFixed(1) : '--';
-    html += '<td' + (y === year ? ' class="cur"' : '') + '>' + v + '%</td>';
+    const ext = (isEnrollProj && yd && yd.extrapolated) ? '*' : '';
+    html += '<td' + (y === year ? ' class="cur"' : '') + '>' + v + '%' + ext + '</td>';
   }
   html += '</tr><tr><td style="font-weight:600">Closures</td>';
   for (const y of YEARS) {
-    const yd = d.scenarios[scenario][String(y)];
+    const yd = scenData[String(y)];
     const v = yd ? Math.round(yd.expected_closures) : '--';
     html += '<td' + (y === year ? ' class="cur"' : '') + '>' + v + '</td>';
   }
@@ -426,9 +446,16 @@ function updateMap() {
       layer.setStyle({fillColor: '#ccc', fillOpacity: 0.3});
       return;
     }
-    const yr = d.scenarios[st.scenario][String(st.year)];
+    const scenData = d.scenarios[st.scenario];
+    if (!scenData) {
+      layer.setStyle({fillColor: '#ccc', fillOpacity: 0.3, weight: 1, color: '#999', opacity: 0.4});
+      layer.unbindTooltip();
+      layer.bindTooltip('<strong>' + d.state + '</strong><br>No data for this scenario', {className: 'state-tooltip', sticky: true});
+      return;
+    }
+    const yr = scenData[String(st.year)];
     if (!yr) {
-      layer.setStyle({fillColor: '#ccc', fillOpacity: 0.3});
+      layer.setStyle({fillColor: '#ccc', fillOpacity: 0.3, weight: 1, color: '#999', opacity: 0.4});
       return;
     }
 
