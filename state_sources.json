@@ -122,9 +122,9 @@
       "time_horizon": "5-year projections",
       "format": "PDF",
       "downloadable": false,
-      "status": "PDF — manual extraction needed",
+      "status": "downloaded",
       "vintage": "January 2026",
-      "notes": "EDR holds biannual Public Schools PreK-12 Enrollment Estimating Conference. Results in PDF reports by district. No bulk Excel download found."
+      "notes": "EDR Education Estimating Conference PreK-12 Enrollment, January 5, 2026. State totals extracted from PDF (FTE forecasts FY2025-26 through FY2030-31)."
     },
     {
       "state": "Georgia", "fips": "13", "abbr": "GA",
@@ -599,12 +599,12 @@
       "source": "UW-Madison Applied Population Lab (APL)",
       "url": "https://apl.wisc.edu/services",
       "geo_level": "district",
-      "time_horizon": "10-year (to 2032-33)",
+      "time_horizon": "10-year (2025-26 to 2034-35)",
       "format": "PDF",
       "downloadable": false,
-      "status": "PDF — manual extraction needed",
-      "vintage": "October 2023",
-      "notes": "APL publishes statewide enrollment projections report (PDF) with district breakdowns by locale type. Individual district projections available on contract. Statewide PDF at cdn.apl.wisc.edu."
+      "status": "downloaded",
+      "vintage": "2025",
+      "notes": "APL Projecting Public School Enrollment in Wisconsin, 2025. Five-Year Trend scenario for 4K-12, extracted from PDF Table 1."
     },
     {
       "state": "Wyoming", "fips": "56", "abbr": "WY",

@@ -21,7 +21,7 @@ to 2031 (Digest Table 203.20). Years 2026-2030 are linearly interpolated; 2032-2
 linearly extrapolated from the 2025-2031 trend.
 
 - **State-level records**: 1377
-- **County-level records** (CA, IA, MD, PA direct + ACS-distributed): 81022
+- **County-level records** (CA, IA, MD, PA direct + ACS-distributed): 81038
 
 ## State-by-State Detail
 

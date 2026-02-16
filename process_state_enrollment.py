@@ -641,6 +641,82 @@ def process_nc_population():
     return records
 
 
+def process_florida():
+    """Process Florida EDR enrollment forecasts from PDF-extracted data."""
+    print("Processing Florida EDR enrollment forecasts...")
+
+    # Florida Education Estimating Conference, January 5, 2026
+    # State total FTE forecasts by fiscal year (row 99 "Florida" from Forecast by Program pages)
+    # FY = school year, e.g. FY2025-26 means fall 2025
+    fl_forecasts = {
+        2025: 3188447,   # FY2025-26 EDR Estimate (page 3)
+        2026: 3211090,   # FY2026-27 Forecast (page 5)
+        2027: 3227339,   # FY2027-28 Forecast (page 7)
+        2028: 3250535,   # FY2028-29 Forecast (page 9)
+        2029: 3264687,   # FY2029-30 Forecast (page 11)
+        2030: 3287758,   # FY2030-31 Forecast (page 13)
+    }
+
+    records = []
+    for yr, enrollment in sorted(fl_forecasts.items()):
+        records.append({
+            'state_fips': '12',
+            'state_name': 'Florida',
+            'state_abbr': 'FL',
+            'county_fips': None,
+            'geo_name': 'Florida',
+            'geo_level': 'state',
+            'year': yr,
+            'projected_enrollment': enrollment,
+            'source': 'Florida EDR Education Estimating Conference, January 2026',
+            'interpolated': False,
+            'extrapolated': False,
+        })
+
+    print(f"  Florida: {len(records)} records (state level, 2025-2030)")
+    return records
+
+
+def process_wisconsin():
+    """Process Wisconsin APL enrollment projections from PDF-extracted data."""
+    print("Processing Wisconsin APL enrollment projections...")
+
+    # UW-Madison Applied Population Laboratory, 2025
+    # 4K-12 public school projections, Five-Year Trend (more conservative)
+    # School year labels map: 25-26 -> fall 2025, etc.
+    wi_projections = {
+        2025: 786210,
+        2026: 773155,
+        2027: 760732,
+        2028: 750092,
+        2029: 739836,
+        2030: 729246,
+        2031: 718424,
+        2032: 706885,
+        2033: 695159,
+        2034: 682594,
+    }
+
+    records = []
+    for yr, enrollment in sorted(wi_projections.items()):
+        records.append({
+            'state_fips': '55',
+            'state_name': 'Wisconsin',
+            'state_abbr': 'WI',
+            'county_fips': None,
+            'geo_name': 'Wisconsin',
+            'geo_level': 'state',
+            'year': yr,
+            'projected_enrollment': enrollment,
+            'source': 'UW-Madison Applied Population Lab, Projecting Public School Enrollment 2025',
+            'interpolated': False,
+            'extrapolated': False,
+        })
+
+    print(f"  Wisconsin: {len(records)} records (state level, 2025-2034)")
+    return records
+
+
 def load_acs_school_age():
     """Load ACS county school-age population shares for distributing state projections."""
     acs_path = os.path.join(DATA_DIR, 'acs_county_school_age.json')
@@ -874,7 +950,9 @@ def main():
     tx_records = process_texas()
     co_records = process_colorado_population()
     nc_records = process_nc_population()
-    state_specific = ca_records + ia_records + md_records + pa_records + va_records + tx_records + co_records + nc_records
+    fl_records = process_florida()
+    wi_records = process_wisconsin()
+    state_specific = ca_records + ia_records + md_records + pa_records + va_records + tx_records + co_records + nc_records + fl_records + wi_records
 
     # Step 3: Load ACS shares and distribute state projections to counties
     result = load_acs_school_age()
@@ -902,6 +980,8 @@ def main():
                 'Texas Education Agency Attendance Projections FY2026-2027 (TX state level)',
                 'Colorado DOLA School-Age Population Projections (CO state level, ages 5-17)',
                 'NC OSBM School-Age Population Projections (NC state level, ages 5-17)',
+                'Florida EDR Education Estimating Conference January 2026 (FL state level)',
+                'UW-Madison Applied Population Lab Enrollment Projections 2025 (WI state level)',
             ],
             'total_records': len(all_records),
             'state_level_records': len(nces_records),
