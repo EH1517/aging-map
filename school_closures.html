@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>U.S. Public School Closure Risk Explorer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg-header: #16213e;
+    --text-primary: #e0e0e0;
+    --text-dark: #2c2c2c;
+    --accent: #e94560;
+    --accent-light: #ff6b81;
+    --shadow: 0 2px 8px rgba(0,0,0,0.15);
+    --green: #2d9a2d;
+    --yellow: #d4a017;
+    --orange: #e67e22;
+    --red: #c0392b;
+  }
+  html, body {
+    height: 100%;
+    font-family: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f0f0f0;
+    color: var(--text-dark);
+  }
+  .header {
+    background: var(--bg-header);
+    color: var(--text-primary);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .header h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .header .subtitle { font-size: 12px; font-weight: 300; opacity: 0.7; }
+  .header nav { display: flex; gap: 16px; }
+  .header nav a { color: var(--accent-light); text-decoration: none; font-size: 12px; font-weight: 500; }
+  .header nav a:hover { text-decoration: underline; }
+
+  .stats-banner {
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 36px;
+    flex-wrap: wrap;
+    box-shadow: var(--shadow);
+  }
+  .stat-card { text-align: center; }
+  .stat-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.7px; color: #888; margin-bottom: 2px; }
+  .stat-value { font-size: 24px; font-weight: 700; line-height: 1.1; }
+  .stat-sub { font-size: 11px; color: #888; }
+  .stat-value.decline { color: var(--red); }
+  .stat-value.threshold { color: var(--orange); }
+  .stat-value.students { color: var(--accent); }
+
+  .map-container { height: calc(100vh - 250px); min-height: 400px; position: relative; }
+  #map { height: 100%; width: 100%; }
+
+  .controls {
+    background: #fff;
+    border-top: 1px solid #ddd;
+    padding: 10px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+    box-shadow: 0 -2px 6px rgba(0,0,0,0.06);
+  }
+  .control-group { display: flex; align-items: center; gap: 6px; }
+  .control-group label { font-size: 11px; font-weight: 600; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+  .search-input { padding: 6px 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 13px; font-family: inherit; width: 200px; outline: none; }
+  .search-input:focus { border-color: var(--accent); }
+  .search-btn { padding: 6px 12px; background: var(--accent); color: #fff; border: none; border-radius: 5px; font-size: 12px; font-weight: 600; cursor: pointer; font-family: inherit; }
+  .search-btn:hover { background: var(--accent-light); }
+
+  .slider-container { display: flex; align-items: center; gap: 6px; flex: 1; min-width: 200px; max-width: 340px; }
+  .year-slider { flex: 1; -webkit-appearance: none; appearance: none; height: 5px; background: #ddd; border-radius: 3px; outline: none; }
+  .year-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); cursor: pointer; }
+  .year-slider::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--accent); cursor: pointer; border: none; }
+  .year-display { font-size: 18px; font-weight: 700; color: var(--accent); min-width: 40px; text-align: center; }
+
+  select.ctrl-select { padding: 5px 8px; border: 1px solid #ccc; border-radius: 5px; font-size: 12px; font-family: inherit; background: #fff; }
+
+  .toggle-group { display: flex; gap: 0; }
+  .toggle-group input[type="radio"] { display: none; }
+  .toggle-group label.tbtn { padding: 5px 12px; background: #eee; border: 1px solid #ccc; font-size: 11px; font-weight: 600; cursor: pointer; color: #555; }
+  .toggle-group label.tbtn:first-of-type { border-radius: 5px 0 0 5px; }
+  .toggle-group label.tbtn:last-of-type { border-radius: 0 5px 5px 0; }
+  .toggle-group input:checked + label.tbtn { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .legend {
+    position: absolute; bottom: 20px; right: 10px; z-index: 800;
+    background: rgba(255,255,255,0.93); padding: 10px 12px; border-radius: 8px;
+    box-shadow: var(--shadow); font-size: 11px;
+  }
+  .legend-title { font-weight: 600; margin-bottom: 4px; font-size: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; margin: 2px 0; }
+  .legend-color { width: 18px; height: 12px; border-radius: 2px; border: 1px solid rgba(0,0,0,0.12); }
+
+  .county-tooltip {
+    background: rgba(22,33,62,0.9) !important; color: #fff !important;
+    border: none !important; border-radius: 6px !important;
+    padding: 5px 10px !important; font-family: 'IBM Plex Sans', sans-serif !important;
+    font-size: 12px !important; box-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
+  }
+
+  .leaflet-popup-content {
+    font-family: 'IBM Plex Sans', sans-serif; font-size: 12px; line-height: 1.5; min-width: 240px;
+  }
+  .popup-title { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+  .popup-source { font-size: 10px; color: #888; font-style: italic; margin-bottom: 6px; }
+  .popup-stat { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid #f0f0f0; }
+  .popup-stat .plbl { color: #666; }
+  .popup-stat .pval { font-weight: 600; }
+  .popup-risk { display: flex; gap: 8px; margin-top: 6px; font-size: 11px; }
+  .popup-risk .rb { padding: 2px 6px; border-radius: 3px; color: #fff; font-weight: 600; }
+  .popup-trend { margin-top: 8px; }
+  .popup-trend table { width: 100%; border-collapse: collapse; font-size: 10px; }
+  .popup-trend th { font-weight: 600; text-align: center; padding: 2px 3px; background: #f5f5f5; border-bottom: 1px solid #ddd; }
+  .popup-trend td { text-align: center; padding: 2px 3px; }
+  .popup-trend .cur { background: #fff3cd; font-weight: 600; }
+
+  .methodology-toggle {
+    display: block; width: 100%; padding: 8px 24px; background: #f5f5f5;
+    border: none; border-top: 1px solid #ddd; font-family: inherit;
+    font-size: 12px; font-weight: 600; color: #666; cursor: pointer; text-align: left;
+  }
+  .methodology-toggle:hover { background: #eee; }
+  .methodology { background: #fff; border-top: 1px solid #ddd; max-height: 0; overflow: hidden; transition: max-height 0.4s ease; }
+  .methodology.open { max-height: 800px; overflow-y: auto; }
+  .meth-content { padding: 16px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 12px; line-height: 1.6; color: #444; }
+  .meth-content h3 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+  .meth-content .full { grid-column: 1 / -1; }
+  .meth-content a { color: var(--accent); }
+
+  .loading { position: fixed; inset: 0; background: rgba(255,255,255,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 9999; transition: opacity 0.3s; }
+  .loading.hidden { opacity: 0; pointer-events: none; }
+  .loading-spinner { width: 40px; height: 40px; border: 4px solid #eee; border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { margin-top: 12px; font-size: 14px; color: #666; }
+
+  @media (max-width: 900px) {
+    .controls { gap: 10px; }
+    .meth-content { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loading" id="loading">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Loading school risk data...</div>
+</div>
+
+<div class="header">
+  <div>
+    <h1>U.S. Public School Closure Risk Explorer</h1>
+    <div class="subtitle">Projected enrollment decline and school viability, 2025&ndash;2050</div>
+  </div>
+  <nav>
+    <a href="index.html">County Aging Maps</a>
+    <a href="national.html">National Projections</a>
+  </nav>
+</div>
+
+<div class="stats-banner">
+  <div class="stat-card">
+    <div class="stat-label">Scenario</div>
+    <div class="stat-value" id="statScenario" style="font-size:14px;color:#555">—</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">National Enrollment Decline</div>
+    <div class="stat-value decline" id="statDecline">—</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Schools Below Threshold</div>
+    <div class="stat-value threshold" id="statThreshold">—</div>
+    <div class="stat-sub">(&lt;100 students)</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">Students Affected</div>
+    <div class="stat-value students" id="statStudents">—</div>
+  </div>
+</div>
+
+<div class="map-container">
+  <div id="map"></div>
+</div>
+
+<div class="controls">
+  <div class="control-group">
+    <label>Search</label>
+    <input type="text" class="search-input" id="searchInput" placeholder="County, city, or zip..." onkeydown="if(event.key==='Enter') doSearch()">
+    <button class="search-btn" onclick="doSearch()">Go</button>
+  </div>
+  <div class="control-group slider-container">
+    <label>Year</label>
+    <input type="range" class="year-slider" id="yearSlider" min="0" max="5" step="1" value="1">
+    <span class="year-display" id="yearDisplay">2030</span>
+  </div>
+  <div class="control-group">
+    <label>Demographics</label>
+    <div class="toggle-group">
+      <input type="radio" name="demo" id="demoHauer" value="hauer" checked>
+      <label for="demoHauer" class="tbtn">Hauer</label>
+      <input type="radio" name="demo" id="demoCensus" value="census">
+      <label for="demoCensus" class="tbtn">Census</label>
+    </div>
+  </div>
+  <div class="control-group">
+    <label>TPS Scenario</label>
+    <select class="ctrl-select" id="tpsSelect">
+      <option value="pre_hold">Pre-pandemic hold</option>
+      <option value="pre_trend">Pre-pandemic trend</option>
+      <option value="post_hold" selected>Post-pandemic hold</option>
+      <option value="post_trend">Post-pandemic trend</option>
+    </select>
+  </div>
+  <div class="control-group">
+    <label>Show</label>
+    <div class="toggle-group">
+      <input type="radio" name="metric" id="metDecline" value="decline" checked>
+      <label for="metDecline" class="tbtn">% Decline</label>
+      <input type="radio" name="metric" id="metThreshold" value="threshold">
+      <label for="metThreshold" class="tbtn">At-Risk Schools</label>
+    </div>
+  </div>
+</div>
+
+<button class="methodology-toggle" id="methToggle" onclick="toggleMeth()">&#9656; Methodology &amp; Caveats</button>
+<div class="methodology" id="methPanel">
+  <div class="meth-content">
+    <div>
+      <h3>Demographic Sources</h3>
+      <p><strong>Hauer (bottom-up):</strong> County-level cohort projections from Hauer (2019), SSP2 scenario. Uses 1990&ndash;2015 Census trends. Does not incorporate 2020 Census.</p>
+      <p><strong>Census (top-down):</strong> Census Bureau 2023 national projections (main series) distributed to counties using ACS 2018&ndash;2022 county shares of school-age population. Assumes constant county shares.</p>
+    </div>
+    <div>
+      <h3>TPS Share Scenarios (Brookings 2025)</h3>
+      <p><strong>Pre-pandemic hold:</strong> TPS share frozen at 2011&ndash;2020 average (~83.3%). Assumes pandemic was temporary.</p>
+      <p><strong>Pre-pandemic trend:</strong> Pre-COVID erosion in TPS share extended forward. Gradual decline.</p>
+      <p><strong>Post-pandemic hold:</strong> TPS share locked at 2020&ndash;2024 average (~79.3%). Assumes permanent shift.</p>
+      <p><strong>Post-pandemic trend:</strong> Post-2020 rate of decline projected forward. Steepest loss scenario.</p>
+    </div>
+    <div>
+      <h3>Risk Classification</h3>
+      <p>County-level enrollment decline ratio is applied uniformly to all schools in that county. Schools are classified by projected decline: <span style="color:var(--green)">Green &lt;10%</span>, <span style="color:var(--yellow)">Yellow 10&ndash;25%</span>, <span style="color:var(--orange)">Orange 25&ndash;50%</span>, <span style="color:var(--red)">Red &gt;50%</span>. Schools projected below 100 students are flagged as below the closure threshold.</p>
+    </div>
+    <div>
+      <h3>Key Caveats</h3>
+      <p>Enrollment decline &ne; automatic closure. Closure decisions depend on politics, building costs, nearby alternatives, and state policy. The model applies county-level decline uniformly; in reality, some schools would close while others absorb students. Charter schools are excluded. The 100-student threshold is approximate. Small counties carry higher uncertainty. Historically, ~1&ndash;2% of schools close per year (Brookings 2025).</p>
+    </div>
+    <div class="full">
+      <h3>Sources</h3>
+      <p>
+        <a href="https://www.brookings.edu/wp-content/uploads/2025/08/20250827_ES_Goulas_LearningLossFINAL.pdf" target="_blank">Brookings: Declining Public School Enrollment (2025)</a> |
+        <a href="https://doi.org/10.1038/s41597-019-0324-z" target="_blank">Hauer (2019)</a> |
+        <a href="https://www.census.gov/programs-surveys/popproj.html" target="_blank">Census Bureau Projections</a> |
+        <a href="https://nces.ed.gov/ccd/" target="_blank">NCES Common Core of Data</a> |
+        <a href="https://educationdata.urban.org/" target="_blank">Urban Institute Education Data Portal</a>
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const YEARS = [2025, 2030, 2035, 2040, 2045, 2050];
+  const COLORS_DECLINE = ['#1a9850','#91cf60','#d9ef8b','#fee08b','#fc8d59','#e34a33','#b30000'];
+  const COLORS_THRESHOLD = ['#f7fbff','#c6dbef','#9ecae1','#6baed6','#3182bd','#08519c','#08306b'];
+
+  let riskData = null, geoData = null;
+  let mapObj, geoLayer;
+  let currentYear = 2030, currentDemo = 'hauer', currentTps = 'post_hold', currentMetric = 'decline';
+  let breaks = [], highlightedFips = null;
+
+  async function init() {
+    try {
+      [riskData, geoData] = await Promise.all([
+        fetch('school_risk_data.json').then(r => r.json()),
+        fetch('counties.json').then(r => r.json()),
+      ]);
+    } catch(e) {
+      document.querySelector('.loading-text').textContent = 'Failed to load data. Run process_school_data.py first.';
+      return;
+    }
+    initMap();
+    initControls();
+    updateMap();
+    document.getElementById('loading').classList.add('hidden');
+  }
+
+  function scenarioKey() { return currentDemo + '_' + currentTps; }
+  function yearStr() { return String(currentYear); }
+
+  function scenarioLabel() {
+    const d = currentDemo === 'hauer' ? 'Hauer' : 'Census';
+    const t = {pre_hold:'Pre-hold',pre_trend:'Pre-trend',post_hold:'Post-hold',post_trend:'Post-trend'}[currentTps];
+    return d + ' / ' + t;
+  }
+
+  function initMap() {
+    mapObj = L.map('map', { zoomControl: false }).setView([39.5, -98.5], 4);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; CARTO &copy; OSM', maxZoom: 12
+    }).addTo(mapObj);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png', {
+      maxZoom: 12, pane: 'shadowPane'
+    }).addTo(mapObj);
+    L.control.zoom({ position: 'topright' }).addTo(mapObj);
+
+    geoLayer = L.geoJSON(geoData, {
+      style: () => ({ fillColor: '#ddd', weight: 0.5, color: '#333', fillOpacity: 0.8 }),
+      onEachFeature: (f, layer) => {
+        const fips = f.properties.GEOID;
+        layer.on('mouseover', function(e) {
+          this.setStyle({ weight: 2, color: '#222' });
+          this.bringToFront();
+          const entry = riskData[fips];
+          const sk = scenarioKey(), yr = yearStr();
+          const d = entry && entry.scenarios[sk] && entry.scenarios[sk][yr];
+          const name = entry ? entry.name : f.properties.NAME || fips;
+          let val = '—';
+          if (d) {
+            val = currentMetric === 'decline'
+              ? d.pct_decline.toFixed(1) + '% decline'
+              : d.schools_below_threshold + ' at-risk schools';
+          }
+          layer.bindTooltip(`<strong>${name}</strong><br>${val}`, { className: 'county-tooltip', sticky: true }).openTooltip(e.latlng);
+        });
+        layer.on('mouseout', function() {
+          this.setStyle({ weight: fips===highlightedFips?3:0.5, color: fips===highlightedFips?'#e94560':'#333' });
+          this.closeTooltip();
+        });
+        layer.on('click', function() { showPopup(fips, this); });
+      }
+    }).addTo(mapObj);
+  }
+
+  function initControls() {
+    document.getElementById('yearSlider').addEventListener('input', function() {
+      currentYear = YEARS[parseInt(this.value)];
+      document.getElementById('yearDisplay').textContent = currentYear;
+      updateMap();
+    });
+    document.querySelectorAll('input[name="demo"]').forEach(r => r.addEventListener('change', () => { currentDemo = r.value; updateMap(); }));
+    document.getElementById('tpsSelect').addEventListener('change', function() { currentTps = this.value; updateMap(); });
+    document.querySelectorAll('input[name="metric"]').forEach(r => r.addEventListener('change', () => { currentMetric = r.value; updateMap(); }));
+  }
+
+  function getValues() {
+    const sk = scenarioKey(), yr = yearStr();
+    const vals = [];
+    for (const fips in riskData) {
+      const d = riskData[fips].scenarios[sk];
+      if (!d || !d[yr]) continue;
+      vals.push(currentMetric === 'decline' ? d[yr].pct_decline : d[yr].schools_below_threshold);
+    }
+    return vals.sort((a, b) => a - b);
+  }
+
+  function computeBreaks() {
+    const vals = getValues();
+    if (!vals.length) { breaks = []; return; }
+    const colors = currentMetric === 'decline' ? COLORS_DECLINE : COLORS_THRESHOLD;
+    const n = colors.length;
+    breaks = [];
+    for (let i = 1; i < n; i++) {
+      const idx = Math.floor(i * vals.length / n);
+      breaks.push(vals[Math.min(idx, vals.length - 1)]);
+    }
+  }
+
+  function getColor(value) {
+    const colors = currentMetric === 'decline' ? COLORS_DECLINE : COLORS_THRESHOLD;
+    if (value == null) return '#ddd';
+    for (let i = 0; i < breaks.length; i++) {
+      if (value <= breaks[i]) return colors[i];
+    }
+    return colors[colors.length - 1];
+  }
+
+  function updateMap() {
+    computeBreaks();
+    const sk = scenarioKey(), yr = yearStr();
+
+    geoLayer.eachLayer(layer => {
+      const fips = layer.feature.properties.GEOID;
+      const entry = riskData[fips];
+      const d = entry && entry.scenarios[sk] && entry.scenarios[sk][yr];
+      const val = d ? (currentMetric === 'decline' ? d.pct_decline : d.schools_below_threshold) : null;
+      layer.setStyle({
+        fillColor: getColor(val),
+        weight: fips === highlightedFips ? 3 : 0.5,
+        color: fips === highlightedFips ? '#e94560' : '#333',
+        fillOpacity: 0.8,
+      });
+    });
+
+    updateBanner();
+    updateLegend();
+  }
+
+  function updateBanner() {
+    const sk = scenarioKey(), yr = yearStr();
+    document.getElementById('statScenario').textContent = scenarioLabel() + ' ' + currentYear;
+
+    let totalCurrent = 0, totalProjected = 0, totalBelow = 0;
+    for (const fips in riskData) {
+      const e = riskData[fips];
+      totalCurrent += e.current_enrollment;
+      const d = e.scenarios[sk] && e.scenarios[sk][yr];
+      if (d) {
+        totalProjected += d.projected_enrollment;
+        totalBelow += d.schools_below_threshold;
+      }
+    }
+    const declinePct = totalCurrent > 0 ? ((1 - totalProjected / totalCurrent) * 100) : 0;
+    const studentsLost = totalCurrent - totalProjected;
+
+    document.getElementById('statDecline').textContent = declinePct.toFixed(1) + '%';
+    document.getElementById('statThreshold').textContent = totalBelow.toLocaleString();
+    document.getElementById('statStudents').textContent = (studentsLost / 1e6).toFixed(1) + 'M';
+  }
+
+  function updateLegend() {
+    let el = document.getElementById('map-legend');
+    if (el) el.remove();
+    el = document.createElement('div');
+    el.id = 'map-legend';
+    el.className = 'legend';
+    const colors = currentMetric === 'decline' ? COLORS_DECLINE : COLORS_THRESHOLD;
+    const title = currentMetric === 'decline' ? '% Enrollment Decline' : 'Schools Below Threshold';
+    let html = `<div class="legend-title">${title} (${currentYear})</div>`;
+    for (let i = 0; i < colors.length; i++) {
+      const lo = i === 0 ? (currentMetric === 'decline' ? '<0' : '0') : breaks[i-1].toFixed(currentMetric==='decline'?1:0);
+      const hi = i < breaks.length ? breaks[i].toFixed(currentMetric==='decline'?1:0) : '+';
+      const label = i < breaks.length ? `${lo} – ${hi}` : `${lo}+`;
+      html += `<div class="legend-item"><div class="legend-color" style="background:${colors[i]}"></div><span>${label}</span></div>`;
+    }
+    el.innerHTML = html;
+    document.getElementById('map').appendChild(el);
+  }
+
+  function showPopup(fips, layer) {
+    const entry = riskData[fips];
+    if (!entry) return;
+    const sk = scenarioKey(), yr = yearStr();
+    const d = entry.scenarios[sk] && entry.scenarios[sk][yr];
+
+    let html = `<div class="popup-title">${entry.name}</div>`;
+    html += `<div class="popup-source">${scenarioLabel()}</div>`;
+    html += `<div class="popup-stat"><span class="plbl">Schools (TPS)</span><span class="pval">${entry.schools_total.toLocaleString()}</span></div>`;
+    html += `<div class="popup-stat"><span class="plbl">Current Enrollment</span><span class="pval">${entry.current_enrollment.toLocaleString()}</span></div>`;
+
+    if (d) {
+      html += `<div class="popup-stat"><span class="plbl">Projected Enrollment</span><span class="pval">${d.projected_enrollment.toLocaleString()}</span></div>`;
+      html += `<div class="popup-stat"><span class="plbl">Enrollment Decline</span><span class="pval" style="color:var(--red)">${d.pct_decline.toFixed(1)}%</span></div>`;
+      html += `<div class="popup-stat"><span class="plbl">Below Threshold (&lt;100)</span><span class="pval" style="color:var(--orange)">${d.schools_below_threshold}</span></div>`;
+      html += `<div class="popup-risk">`;
+      html += `<span class="rb" style="background:var(--green)">${d.schools_green}</span>`;
+      html += `<span class="rb" style="background:var(--yellow)">${d.schools_yellow}</span>`;
+      html += `<span class="rb" style="background:var(--orange)">${d.schools_orange}</span>`;
+      html += `<span class="rb" style="background:var(--red)">${d.schools_red}</span>`;
+      html += `</div>`;
+    }
+
+    // Trend table
+    html += `<div class="popup-trend"><table><tr><th></th>`;
+    for (const y of YEARS) html += `<th>${y}</th>`;
+    html += '</tr><tr><td style="font-weight:600">Decline</td>';
+    for (const y of YEARS) {
+      const yd = entry.scenarios[sk] && entry.scenarios[sk][String(y)];
+      const cls = y === currentYear ? ' class="cur"' : '';
+      html += `<td${cls}>${yd ? yd.pct_decline.toFixed(1)+'%' : '—'}</td>`;
+    }
+    html += '</tr><tr><td style="font-weight:600">&lt;100</td>';
+    for (const y of YEARS) {
+      const yd = entry.scenarios[sk] && entry.scenarios[sk][String(y)];
+      const cls = y === currentYear ? ' class="cur"' : '';
+      html += `<td${cls}>${yd ? yd.schools_below_threshold : '—'}</td>`;
+    }
+    html += '</tr></table></div>';
+
+    layer.bindPopup(html, { maxWidth: 400 }).openPopup();
+  }
+
+  // Search
+  async function doSearch() {
+    const q = document.getElementById('searchInput').value.trim();
+    if (!q) return;
+    try {
+      const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&countrycodes=us&limit=1`, {
+        headers: { 'User-Agent': 'school-closure-risk-map/1.0' }
+      });
+      const results = await resp.json();
+      if (!results.length) { alert('Location not found.'); return; }
+      const lat = parseFloat(results[0].lat), lon = parseFloat(results[0].lon);
+      mapObj.setView([lat, lon], 8);
+      highlightedFips = findCounty(lat, lon);
+      updateMap();
+    } catch(e) { alert('Search failed.'); }
+  }
+  window.doSearch = doSearch;
+
+  function findCounty(lat, lon) {
+    const pt = L.latLng(lat, lon);
+    let closest = null, closestDist = Infinity;
+    geoLayer.eachLayer(l => {
+      if (l.getBounds && l.getBounds().contains(pt)) {
+        const d = pt.distanceTo(l.getBounds().getCenter());
+        if (d < closestDist) { closestDist = d; closest = l.feature.properties.GEOID; }
+      }
+    });
+    return closest;
+  }
+
+  function toggleMeth() {
+    const p = document.getElementById('methPanel'), b = document.getElementById('methToggle');
+    p.classList.toggle('open');
+    b.innerHTML = p.classList.contains('open') ? '&#9662; Methodology & Caveats' : '&#9656; Methodology & Caveats';
+  }
+  window.toggleMeth = toggleMeth;
+
+  init();
+})();
+</script>
+</body>
+</html>
