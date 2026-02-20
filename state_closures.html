@@ -298,6 +298,13 @@ const SCALES = {
     colors: ['#f7fcf5','#c7e9c0','#fdd49e','#fc8d59','#e34a33','#b30000'],
     labels: ['<2%','2-5%','5-10%','10-15%','15-25%','>25%']
   },
+  enrollment_change_cc: {
+    label: 'Enrollment Change',
+    unit: '%',
+    breaks: [-15, -10, -5, 0, 5, 10],
+    colors: ['#005a32','#41ab5d','#c7e9c0','#fdd49e','#fc8d59','#b30000'],
+    labels: ['>10% gain','5-10% gain','0-5% gain','0-5% decline','5-10% decline','>10% decline']
+  },
   expected_closures: {
     label: 'Expected Closures',
     unit: '',
@@ -482,8 +489,11 @@ function updateMap() {
     document.getElementById('yearDisplay').textContent = st.year;
   }
 
+  const isCooper = st.scenario === 'cooper_center';
+  const effectiveMetric = (isCooper && st.metric === 'enrollment_decline_pct') ? 'enrollment_change_cc' : st.metric;
+
   updateStats(st.scenario, st.year);
-  updateLegend(st.metric);
+  updateLegend(effectiveMetric);
 
   geoLayer.eachLayer(function(layer) {
     const props = layer.feature.properties;
@@ -508,7 +518,7 @@ function updateMap() {
     }
 
     const value = yr[st.metric] || 0;
-    const color = getColor(value, st.metric);
+    const color = getColor(value, effectiveMetric);
     layer.setStyle({
       fillColor: color,
       fillOpacity: 0.75,
@@ -519,10 +529,14 @@ function updateMap() {
 
     // Update tooltip — use setContent() if tooltip already exists so a
     // currently-visible sticky tooltip updates in place without flicker.
-    const declineTxt = yr.enrollment_decline_pct.toFixed(1);
+    const declinePctTip = yr.enrollment_decline_pct;
     const closuresTxt = Math.round(yr.expected_closures);
+    const changeLabel = (isCooper && declinePctTip < 0) ? 'Gain' : 'Decline';
+    const changeTxt = (isCooper && declinePctTip < 0)
+      ? '+' + Math.abs(declinePctTip).toFixed(1)
+      : declinePctTip.toFixed(1);
     const tooltipContent = '<strong>' + d.state + '</strong><br>' +
-      'Decline: ' + declineTxt + '% | Closures: ~' + closuresTxt;
+      changeLabel + ': ' + changeTxt + '% | Closures: ~' + closuresTxt;
     if (layer.getTooltip()) {
       layer.getTooltip().setContent(tooltipContent);
     } else {
