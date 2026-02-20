@@ -163,7 +163,6 @@
   <nav>
     <a href="index.html">County Aging Maps</a>
     <a href="national.html">National Projections</a>
-    <a href="school_closures.html">County Closure Risk</a>
   </nav>
 </div>
 
@@ -208,6 +207,20 @@
       <label class="tbtn" for="scenTrend">State Trend</label>
       <input type="radio" name="scenario" id="scenEnroll" value="enrollment_proj">
       <label class="tbtn" for="scenEnroll">NCES / State</label>
+      <input type="radio" name="scenario" id="scenCooper" value="cooper_center">
+      <label class="tbtn" for="scenCooper">Cooper Center</label>
+    </div>
+  </div>
+
+  <div class="control-group" id="cooperYearControl" style="display:none">
+    <label>Year</label>
+    <div class="toggle-group">
+      <input type="radio" name="cooper_year" id="cy2020" value="2020">
+      <label class="tbtn" for="cy2020">2020</label>
+      <input type="radio" name="cooper_year" id="cy2030" value="2030" checked>
+      <label class="tbtn" for="cy2030">2030</label>
+      <input type="radio" name="cooper_year" id="cy2040" value="2040">
+      <label class="tbtn" for="cy2040">2040</label>
     </div>
   </div>
 
@@ -238,6 +251,7 @@
       <p><strong>Census Bureau:</strong> Applies the Census 2023 National Population Projections Under-5 trajectory uniformly to every state's 2022 fertility rate. This scenario assumes all states follow the same national birth decline curve.</p>
       <p><strong>State Trend:</strong> Extrapolates each state's own 2005&ndash;2022 fertility decline rate forward, with a floor of 35 births per 1,000 women 15&ndash;44. States like Utah and Idaho (steep recent declines) diverge sharply from the Census scenario.</p>
       <p><strong>NCES / State:</strong> Uses actual enrollment projections from NCES (all 50 states + DC, state level, to 2050) and state agency sources where available (CA DOF, IA DOE, MD Dept of Planning, PA DOE). These projections incorporate migration, existing pipeline effects, and demographic models&mdash;not just fertility. States whose projections end before 2040 are linearly extrapolated. An asterisk (*) in the trend table marks extrapolated years.</p>
+      <p><strong>Cooper Center:</strong> Uses the UVA Weldon Cooper Center 2024 National Population Projections, benchmarked to the 2020 Decennial Census. School-age population (ages 5&ndash;17) by state is extracted for 2020 (baseline), 2030, and 2040. Enrollment change is the ratio of projected school-age population to the 2020 baseline, applied to NCES 2022 enrollment. This scenario incorporates birth rates, mortality, and interstate migration&mdash;making it the most comprehensive demographic scenario. Only three years are available: 2020 (baseline), 2030, and 2040. Negative decline values indicate projected enrollment growth.</p>
     </div>
     <div>
       <h3>Pipeline Lag Model</h3>
@@ -269,6 +283,7 @@
 
 <script>
 const YEARS = [2025, 2027, 2030, 2033, 2035, 2037, 2040];
+const COOPER_YEARS = [2020, 2030, 2040];
 let stateData = null;
 let stateGeo = null;
 let geoLayer = null;
@@ -319,12 +334,15 @@ function getColor(value, metric) {
 }
 
 function getState() {
-  return {
-    scenario: document.querySelector('input[name="scenario"]:checked').value,
-    yearIdx: parseInt(document.getElementById('yearSlider').value),
-    year: YEARS[parseInt(document.getElementById('yearSlider').value)],
-    metric: document.getElementById('colorMetric').value
-  };
+  const scenario = document.querySelector('input[name="scenario"]:checked').value;
+  let year;
+  if (scenario === 'cooper_center') {
+    const checked = document.querySelector('input[name="cooper_year"]:checked');
+    year = checked ? parseInt(checked.value) : 2030;
+  } else {
+    year = YEARS[parseInt(document.getElementById('yearSlider').value)];
+  }
+  return { scenario, year, metric: document.getElementById('colorMetric').value };
 }
 
 function fmt(n, d) {
@@ -346,7 +364,7 @@ function updateLegend(metric) {
 }
 
 function updateStats(scenario, year) {
-  const scenarioLabels = {census: 'Census Bureau', state_trend: 'State Trend', enrollment_proj: 'NCES / State Projections'};
+  const scenarioLabels = {census: 'Census Bureau', state_trend: 'State Trend', enrollment_proj: 'NCES / State Projections', cooper_center: 'Cooper Center'};
   document.getElementById('statScenario').textContent = (scenarioLabels[scenario] || scenario) + ' ' + year;
 
   let totalDecline = 0, totalClosures = 0, totalEnrollment = 0, totalProjected = 0, count = 0;
@@ -380,6 +398,7 @@ function buildPopup(abbr, scenario, year) {
   if (!yr) return 'No data for ' + year;
 
   const isEnrollProj = scenario === 'enrollment_proj';
+  const isCooper = scenario === 'cooper_center';
   let html = '<div class="popup-title">' + d.state + ' (' + abbr + ')</div>';
 
   if (isEnrollProj) {
@@ -389,40 +408,53 @@ function buildPopup(abbr, scenario, year) {
     const srcLink = srcUrl ? '<a href="' + srcUrl + '" target="_blank" style="color:var(--accent);text-decoration:underline;">' + srcLabel + '</a>' : srcLabel;
     html += '<div style="font-size:10px;color:#888;font-style:italic;margin-bottom:6px;">Source: ' + srcLink + ' (native data through ' + lastNative + ')' + (yr.extrapolated ? ' &mdash; <span style="color:var(--orange)">extrapolated</span>' : '') + '</div>';
   }
+  if (isCooper) {
+    html += '<div style="font-size:10px;color:#888;font-style:italic;margin-bottom:6px;">Source: <a href="https://www.coopercenter.org/national-population-projections" target="_blank" style="color:var(--accent);text-decoration:underline;">UVA Cooper Center</a> &mdash; 2020 Census benchmarked</div>';
+  }
 
   html += '<div class="popup-stat"><span class="plbl">Current Schools</span><span class="pval">' + fmt(d.current_schools) + '</span></div>';
   html += '<div class="popup-stat"><span class="plbl">Current Enrollment</span><span class="pval">' + fmt(d.current_enrollment) + '</span></div>';
 
-  if (!isEnrollProj) {
+  if (!isEnrollProj && !isCooper) {
     html += '<div class="popup-stat"><span class="plbl">Fertility Rate (2022)</span><span class="pval">' + d.rate_2022.toFixed(1) + '</span></div>';
     html += '<div class="popup-stat"><span class="plbl">2005-2022 Decline</span><span class="pval">' + (d.decline_2005_2022 * 100).toFixed(1) + '%</span></div>';
   }
 
   html += '<div style="margin-top:8px;padding-top:6px;border-top:2px solid #e94560">';
-  if (!isEnrollProj) {
+  if (!isEnrollProj && !isCooper) {
     html += '<div class="popup-stat"><span class="plbl">Projected Fertility (' + year + ')</span><span class="pval">' + yr.fertility_rate.toFixed(1) + '</span></div>';
     html += '<div class="popup-stat"><span class="plbl">Birth Decline</span><span class="pval" style="color:var(--red)">' + yr.birth_decline_pct.toFixed(1) + '%</span></div>';
     html += '<div class="popup-stat"><span class="plbl">Pipeline Fraction</span><span class="pval">' + (yr.post_2022_fraction * 100).toFixed(0) + '%</span></div>';
   }
-  html += '<div class="popup-stat"><span class="plbl">Enrollment Decline</span><span class="pval" style="color:var(--red)">' + yr.enrollment_decline_pct.toFixed(1) + '%</span></div>';
+  if (isCooper && year !== 2020) {
+    const sa2020 = yr.cooper_school_age_2020 ? yr.cooper_school_age_2020.toLocaleString() : '--';
+    const saProj = yr.cooper_school_age_proj ? yr.cooper_school_age_proj.toLocaleString() : '--';
+    html += '<div class="popup-stat"><span class="plbl">School-Age Pop. 2020</span><span class="pval">' + sa2020 + '</span></div>';
+    html += '<div class="popup-stat"><span class="plbl">School-Age Pop. ' + year + '</span><span class="pval">' + saProj + '</span></div>';
+  }
+  const declinePct = yr.enrollment_decline_pct;
+  const declineColor = declinePct > 0 ? 'var(--red)' : 'var(--green)';
+  const declineLabel = declinePct > 0 ? 'Enrollment Decline' : 'Enrollment Gain';
+  html += '<div class="popup-stat"><span class="plbl">' + declineLabel + '</span><span class="pval" style="color:' + declineColor + '">' + Math.abs(declinePct).toFixed(1) + '%</span></div>';
   html += '<div class="popup-stat"><span class="plbl">Projected Enrollment</span><span class="pval">' + fmt(yr.projected_enrollment) + '</span></div>';
   html += '<div class="popup-stat"><span class="plbl">Expected Closures</span><span class="pval" style="color:var(--orange)">' + yr.expected_closures.toFixed(0) + ' (' + yr.expected_closures_pct.toFixed(1) + '%)</span></div>';
   html += '</div>';
 
-  // Trend table across years
+  // Trend table — use COOPER_YEARS for Cooper Center, YEARS for all others
+  const trendYears = isCooper ? COOPER_YEARS : YEARS;
   html += '<div class="popup-trend"><table><tr><th>Year</th>';
-  for (const y of YEARS) {
+  for (const y of trendYears) {
     html += '<th' + (y === year ? ' class="cur"' : '') + '>' + String(y).slice(2) + '</th>';
   }
   html += '</tr><tr><td style="font-weight:600">Decline</td>';
-  for (const y of YEARS) {
+  for (const y of trendYears) {
     const yd = scenData[String(y)];
     const v = yd ? yd.enrollment_decline_pct.toFixed(1) : '--';
     const ext = (isEnrollProj && yd && yd.extrapolated) ? '*' : '';
     html += '<td' + (y === year ? ' class="cur"' : '') + '>' + v + '%' + ext + '</td>';
   }
   html += '</tr><tr><td style="font-weight:600">Closures</td>';
-  for (const y of YEARS) {
+  for (const y of trendYears) {
     const yd = scenData[String(y)];
     const v = yd ? Math.round(yd.expected_closures) : '--';
     html += '<td' + (y === year ? ' class="cur"' : '') + '>' + v + '</td>';
@@ -432,10 +464,23 @@ function buildPopup(abbr, scenario, year) {
   return html;
 }
 
+function handleScenarioChange() {
+  const isCooper = document.querySelector('input[name="scenario"]:checked').value === 'cooper_center';
+  document.querySelector('.slider-container').style.display = isCooper ? 'none' : '';
+  document.getElementById('cooperYearControl').style.display = isCooper ? '' : 'none';
+  // Fertility Rate color metric has no meaning in Cooper Center
+  if (isCooper && document.getElementById('colorMetric').value === 'fertility_rate') {
+    document.getElementById('colorMetric').value = 'enrollment_decline_pct';
+  }
+  updateMap();
+}
+
 function updateMap() {
   if (!geoLayer || !stateData) return;
   const st = getState();
-  document.getElementById('yearDisplay').textContent = st.year;
+  if (st.scenario !== 'cooper_center') {
+    document.getElementById('yearDisplay').textContent = st.year;
+  }
 
   updateStats(st.scenario, st.year);
   updateLegend(st.metric);
@@ -451,8 +496,9 @@ function updateMap() {
     const scenData = d.scenarios[st.scenario];
     if (!scenData) {
       layer.setStyle({fillColor: '#ccc', fillOpacity: 0.3, weight: 1, color: '#999', opacity: 0.4});
-      layer.unbindTooltip();
-      layer.bindTooltip('<strong>' + d.state + '</strong><br>No data for this scenario', {className: 'state-tooltip', sticky: true});
+      const noDataContent = '<strong>' + d.state + '</strong><br>No data for this scenario';
+      if (layer.getTooltip()) { layer.getTooltip().setContent(noDataContent); }
+      else { layer.bindTooltip(noDataContent, {className: 'state-tooltip', sticky: true}); }
       return;
     }
     const yr = scenData[String(st.year)];
@@ -471,15 +517,22 @@ function updateMap() {
       opacity: 0.6
     });
 
-    // Update tooltip
+    // Update tooltip — use setContent() if tooltip already exists so a
+    // currently-visible sticky tooltip updates in place without flicker.
     const declineTxt = yr.enrollment_decline_pct.toFixed(1);
     const closuresTxt = Math.round(yr.expected_closures);
-    layer.unbindTooltip();
-    layer.bindTooltip(
-      '<strong>' + d.state + '</strong><br>' +
-      'Decline: ' + declineTxt + '% | Closures: ~' + closuresTxt,
-      {className: 'state-tooltip', sticky: true}
-    );
+    const tooltipContent = '<strong>' + d.state + '</strong><br>' +
+      'Decline: ' + declineTxt + '% | Closures: ~' + closuresTxt;
+    if (layer.getTooltip()) {
+      layer.getTooltip().setContent(tooltipContent);
+    } else {
+      layer.bindTooltip(tooltipContent, {className: 'state-tooltip', sticky: true});
+    }
+
+    // Refresh popup content if it is currently open
+    if (layer.isPopupOpen()) {
+      layer.setPopupContent(buildPopup(abbr, st.scenario, st.year));
+    }
   });
 }
 
@@ -537,6 +590,9 @@ async function init() {
   // Event listeners
   document.getElementById('yearSlider').addEventListener('input', updateMap);
   document.querySelectorAll('input[name="scenario"]').forEach(function(r) {
+    r.addEventListener('change', handleScenarioChange);
+  });
+  document.querySelectorAll('input[name="cooper_year"]').forEach(function(r) {
     r.addEventListener('change', updateMap);
   });
   document.getElementById('colorMetric').addEventListener('change', updateMap);
