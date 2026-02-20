@@ -1,0 +1,6 @@
+exclude:
+  - "*.py"
+  - "*.md"
+  - "brookings_params.json"
+  - "process_*.py"
+  - "README.md"
