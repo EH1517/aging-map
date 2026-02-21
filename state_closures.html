@@ -222,18 +222,6 @@
       <label class="tbtn" for="scenTrend">State Fertility Trend</label>
       <input type="radio" name="scenario" id="scenEnroll" value="enrollment_proj">
       <label class="tbtn" for="scenEnroll">NCES / State Gvm't</label>
-      <input type="radio" name="scenario" id="scenCooper" value="cooper_center">
-      <label class="tbtn" for="scenCooper">Cooper Center</label>
-    </div>
-  </div>
-
-  <div class="control-group" id="cooperYearControl" style="display:none">
-    <label>Year</label>
-    <div class="toggle-group">
-      <input type="radio" name="cooper_year" id="cy2020" value="2020">
-      <label class="tbtn" for="cy2020">2020</label>
-      <input type="radio" name="cooper_year" id="cy2030" value="2030" checked>
-      <label class="tbtn" for="cy2030">2030</label>
     </div>
   </div>
 
@@ -254,7 +242,7 @@
     <div class="full">
       <h3>Reading the Map</h3>
       <p>Use the <strong>Color by</strong> dropdown to switch between four views of the data:</p>
-      <p>&bull; <strong>Enrollment Decline %</strong> &mdash; The projected percentage change in K&ndash;12 enrollment relative to 2022. For the State Fertility Trend scenario, this reflects births entering the school pipeline; for NCES / State Gvm't, it reflects official enrollment projections; for Cooper Center, it reflects changes in projected school-age population (ages 5&ndash;17). On the Cooper Center tab this metric uses a diverging color scale: green = projected enrollment <em>growth</em>, red = projected decline.</p>
+      <p>&bull; <strong>Enrollment Decline %</strong> &mdash; The projected percentage change in K&ndash;12 enrollment relative to 2022. For the State Fertility Trend scenario, this reflects births entering the school pipeline; for NCES / State Gvm't, it reflects official enrollment projections. On the NCES / State Gvm't tab this metric uses a diverging color scale: green = projected enrollment <em>growth</em>, red = projected decline.</p>
       <p>&bull; <strong>Expected Closures</strong> &mdash; The estimated number of traditional public schools likely to close by the selected year, based on how projected enrollment decline interacts with each state's existing school-size distribution. States with many small rural schools show higher counts even at moderate decline rates. States projected to gain enrollment show zero expected closures, since population growth implies net school openings rather than closures.</p>
       <p>&bull; <strong>Closure Risk %</strong> &mdash; Expected closures as a share of each state's total school count. Normalizes for state size to reveal which states face the highest <em>proportion</em> of schools at risk.</p>
       <p>&bull; <strong>Fertility Rate</strong> &mdash; The projected general fertility rate (births per 1,000 women ages 15&ndash;44). Only available for the State Fertility Trend scenario, which is built directly from fertility trajectories. Lower rates (darker red) indicate states where the birth decline is most severe.</p>
@@ -263,13 +251,12 @@
       <h3>Scenario Descriptions</h3>
       <p><strong>State Fertility Trend:</strong> Extrapolates each state's own 2005&ndash;2022 fertility decline rate forward, with a floor of 35 births per 1,000 women 15&ndash;44. States with steep recent declines (e.g., Utah, Idaho) see sharper projected enrollment falls. Enrollment is derived via the pipeline lag model (see below).</p>
       <p><strong>NCES / State Gvm't:</strong> Bypasses the fertility model entirely and uses published enrollment projections directly. The base source is the NCES state-level enrollment forecast (all 50 states + DC, projected to 2050). Where state education agencies or planning offices have published more recent or detailed projections, those override the NCES figures: California (CA DOF), Colorado (CO DOLA county-level age data), Iowa (IA DOE), Maryland (MD Dept of Planning), North Carolina, Florida, Texas, Virginia, and Wisconsin. Projections ending before 2040 are linearly extrapolated; an asterisk (*) in the popup trend table marks extrapolated years. This scenario incorporates migration, demographic composition, and local modeling decisions&mdash;not just fertility.</p>
-      <p><strong>Cooper Center (2030 only):</strong> Uses the UVA Weldon Cooper Center 2024 National Population Projections, released July 1, 2024, and benchmarked to the 2020 Decennial Census. The Cooper Center applies the Hamilton&ndash;Perry cohort-component method, which ages forward 2020 Census cohorts using Cohort Change Ratios (CCRs) averaged across 2000&ndash;2010 and 2010&ndash;2020. CCRs implicitly capture both mortality and net migration (domestic and international)&mdash;no immigration variable is modeled explicitly. School-age population (ages 5&ndash;17) is constructed as: <em>ages 5&ndash;9 + ages 10&ndash;14 + &frac35; &times; ages 15&ndash;19</em>. Enrollment change equals the ratio of projected 2030 school-age population to the 2020 baseline, applied to NCES 2022 enrollment. The 2040 year is excluded: because the Hamilton&ndash;Perry method compounds historical assumptions twice over 20 years, the 2040 outputs diverge 15&ndash;20 percentage points from state agency projections in most states and are not considered reliable. The Cooper Center's implicit immigration assumption&mdash;the 2000&ndash;2020 historical average of roughly 1.0&ndash;1.3 million net immigrants per year&mdash;is higher than CBO's current policy-realistic projection for the late 2020s, so this scenario may overstate school-age growth in high-immigration-dependent states.</p>
     </div>
     <div>
       <h3>Pipeline Lag Model</h3>
       <p>Applies to the <strong>State Fertility Trend</strong> scenario only. K&ndash;12 enrollment in year Y draws on 13 birth cohorts: children born in years Y&minus;17 (entering 12th grade) through Y&minus;5 (entering kindergarten). Only cohorts born after 2022 carry the projected fertility decline; earlier cohorts are already in the pipeline at their historical size.</p>
       <p>The share of the pipeline affected by post-2022 fertility trends therefore grows over time: 0 of 13 cohorts are post-2022 as of 2027 (meaning no effect yet), roughly 3 of 13 by 2030 (~23%), and all 13 of 13 by 2040 (100% effect). Enrollment decline for year Y = (post-2022 cohorts / 13) &times; (average projected birth decline for those cohorts).</p>
-      <p>The NCES / State Gvm't and Cooper Center scenarios do not use this model&mdash;they draw directly from published projections or school-age population counts that already incorporate the full demographic picture.</p>
+      <p>The NCES / State Gvm't scenario does not use this model&mdash;it draws directly from published projections that already incorporate the full demographic picture.</p>
       <h3 style="margin-top:14px">School-Size Distribution</h3>
       <p>All closure calculations use the NCES 2022&ndash;23 school census filtered to traditional public schools (regular, operational, non-charter, non-virtual). Schools are grouped into five enrollment buckets, each assigned a representative average enrollment used in the closure model:</p>
       <p>&bull; Under 100 students &mdash; avg. 55<br>
@@ -297,15 +284,12 @@
       <p>&bull; <strong>School data:</strong> NCES Common Core of Data 2022&ndash;23. Filtered to regular, operational, non-charter, non-virtual traditional public schools.</p>
       <p>&bull; <strong>NCES enrollment projections:</strong> NCES Projections of Education Statistics to 2031 and to 2050, state-level tables.</p>
       <p>&bull; <strong>State agency projections:</strong> CA Dept of Finance; CO Dept of Local Affairs (DOLA) county age projections; IA Dept of Education; MD Dept of Planning; NC, FL, TX, VA, WI state enrollment forecasts.</p>
-      <p>&bull; <strong>Cooper Center:</strong> UVA Weldon Cooper Center for Public Service, 2024 National and 50-State Population Projections (released July 1, 2024).</p>
-      <p>&bull; <strong>Immigration context:</strong> CBO, <em>The Demographic Outlook: 2026 to 2056</em> (January 2026), Figure A-4.</p>
       <p>&bull; <strong>Boundaries:</strong> Census TIGER/Line 2022, 1:20m cartographic.</p>
     </div>
     <div class="full">
       <h3>Important Caveats</h3>
       <p>The <strong>State Fertility Trend</strong> scenario isolates the fertility channel only. It does not account for domestic or international migration, school consolidation decisions, charter school competition, private school trends, or changes in birth timing. It shows what would happen to enrollment if only fertility rates change as projected&mdash;a useful lower-bound estimate but not a complete forecast.</p>
       <p>The <strong>NCES / State Gvm't</strong> scenario incorporates richer demographic inputs but is only as good as the underlying agency projections, which vary in methodology, vintage, and local assumptions. Linear extrapolation beyond an agency's published horizon introduces additional uncertainty.</p>
-      <p>The <strong>Cooper Center</strong> 2030 scenario is the most demographically comprehensive (births, mortality, and domestic + international migration are all embedded), but its immigration assumptions reflect 2000&ndash;2020 historical patterns that may not hold under current federal policy. State-level enrollment figures are particularly uncertain for fast-growing states that depend heavily on international immigration. The 2040 horizon is excluded as unreliable.</p>
       <p>Across all scenarios, the <strong>closure model is illustrative</strong>. Actual school closures depend on district fiscal capacity, state aid, local politics, charter competition, demographic concentration within districts, and decisions by school boards&mdash;none of which are captured here. This tool is intended to highlight which states face the most structural enrollment pressure, not to predict specific closures.</p>
     </div>
   </div>
@@ -313,7 +297,6 @@
 
 <script>
 const YEARS = [2025, 2027, 2030, 2033, 2035, 2037, 2040];
-const COOPER_YEARS = [2020, 2030];
 let stateData = null;
 let stateGeo = null;
 let geoLayer = null;
@@ -372,13 +355,7 @@ function getColor(value, metric) {
 
 function getState() {
   const scenario = document.querySelector('input[name="scenario"]:checked').value;
-  let year;
-  if (scenario === 'cooper_center') {
-    const checked = document.querySelector('input[name="cooper_year"]:checked');
-    year = checked ? parseInt(checked.value) : 2030;
-  } else {
-    year = YEARS[parseInt(document.getElementById('yearSlider').value)];
-  }
+  const year = YEARS[parseInt(document.getElementById('yearSlider').value)];
   return { scenario, year, metric: document.getElementById('colorMetric').value };
 }
 
@@ -401,7 +378,7 @@ function updateLegend(metric) {
 }
 
 function updateStats(scenario, year) {
-  const scenarioLabels = {state_trend: 'State Fertility Trend', enrollment_proj: 'NCES / State Gvm\'t', cooper_center: 'Cooper Center'};
+  const scenarioLabels = {state_trend: 'State Fertility Trend', enrollment_proj: 'NCES / State Gvm\'t'};
   document.getElementById('statScenario').textContent = (scenarioLabels[scenario] || scenario) + ' ' + year;
 
   let totalDecline = 0, totalClosures = 0, totalEnrollment = 0, totalProjected = 0, count = 0;
@@ -435,7 +412,6 @@ function buildPopup(abbr, scenario, year) {
   if (!yr) return 'No data for ' + year;
 
   const isEnrollProj = scenario === 'enrollment_proj';
-  const isCooper = scenario === 'cooper_center';
   let html = '<div class="popup-title">' + d.state + ' (' + abbr + ')</div>';
 
   if (isEnrollProj) {
@@ -445,29 +421,20 @@ function buildPopup(abbr, scenario, year) {
     const srcLink = srcUrl ? '<a href="' + srcUrl + '" target="_blank" style="color:var(--accent);text-decoration:underline;">' + srcLabel + '</a>' : srcLabel;
     html += '<div style="font-size:10px;color:#888;font-style:italic;margin-bottom:6px;">Source: ' + srcLink + ' (native data through ' + lastNative + ')' + (yr.extrapolated ? ' &mdash; <span style="color:var(--orange)">extrapolated</span>' : '') + '</div>';
   }
-  if (isCooper) {
-    html += '<div style="font-size:10px;color:#888;font-style:italic;margin-bottom:6px;">Source: <a href="https://www.coopercenter.org/national-population-projections" target="_blank" style="color:var(--accent);text-decoration:underline;">UVA Cooper Center</a> &mdash; 2020 Census benchmarked</div>';
-  }
 
   html += '<div class="popup-stat"><span class="plbl">Current Schools</span><span class="pval">' + fmt(d.current_schools) + '</span></div>';
   html += '<div class="popup-stat"><span class="plbl">Current Enrollment</span><span class="pval">' + fmt(d.current_enrollment) + '</span></div>';
 
-  if (!isEnrollProj && !isCooper) {
+  if (!isEnrollProj) {
     html += '<div class="popup-stat"><span class="plbl">Fertility Rate (2022)</span><span class="pval">' + d.rate_2022.toFixed(1) + '</span></div>';
     html += '<div class="popup-stat"><span class="plbl">2005-2022 Decline</span><span class="pval">' + (d.decline_2005_2022 * 100).toFixed(1) + '%</span></div>';
   }
 
   html += '<div style="margin-top:8px;padding-top:6px;border-top:2px solid #e94560">';
-  if (!isEnrollProj && !isCooper) {
+  if (!isEnrollProj) {
     html += '<div class="popup-stat"><span class="plbl">Projected Fertility (' + year + ')</span><span class="pval">' + yr.fertility_rate.toFixed(1) + '</span></div>';
     html += '<div class="popup-stat"><span class="plbl">Birth Decline</span><span class="pval" style="color:var(--red)">' + yr.birth_decline_pct.toFixed(1) + '%</span></div>';
     html += '<div class="popup-stat"><span class="plbl">Pipeline Fraction</span><span class="pval">' + (yr.post_2022_fraction * 100).toFixed(0) + '%</span></div>';
-  }
-  if (isCooper && year !== 2020) {
-    const sa2020 = yr.cooper_school_age_2020 ? yr.cooper_school_age_2020.toLocaleString() : '--';
-    const saProj = yr.cooper_school_age_proj ? yr.cooper_school_age_proj.toLocaleString() : '--';
-    html += '<div class="popup-stat"><span class="plbl">School-Age Pop. 2020</span><span class="pval">' + sa2020 + '</span></div>';
-    html += '<div class="popup-stat"><span class="plbl">School-Age Pop. ' + year + '</span><span class="pval">' + saProj + '</span></div>';
   }
   const declinePct = yr.enrollment_decline_pct;
   const declineColor = declinePct > 0 ? 'var(--red)' : 'var(--green)';
@@ -477,8 +444,7 @@ function buildPopup(abbr, scenario, year) {
   html += '<div class="popup-stat"><span class="plbl">Expected Closures</span><span class="pval" style="color:var(--orange)">' + yr.expected_closures.toFixed(0) + ' (' + yr.expected_closures_pct.toFixed(1) + '%)</span></div>';
   html += '</div>';
 
-  // Trend table — use COOPER_YEARS for Cooper Center, YEARS for all others
-  const trendYears = isCooper ? COOPER_YEARS : YEARS;
+  const trendYears = YEARS;
   html += '<div class="popup-trend"><table><tr><th>Year</th>';
   for (const y of trendYears) {
     html += '<th' + (y === year ? ' class="cur"' : '') + '>' + String(y).slice(2) + '</th>';
@@ -503,10 +469,7 @@ function buildPopup(abbr, scenario, year) {
 
 function handleScenarioChange() {
   const scenario = document.querySelector('input[name="scenario"]:checked').value;
-  const isCooper = scenario === 'cooper_center';
   const isTrend = scenario === 'state_trend';
-  document.querySelector('.slider-container').style.display = isCooper ? 'none' : '';
-  document.getElementById('cooperYearControl').style.display = isCooper ? '' : 'none';
   // Fertility Rate color metric only meaningful for State Fertility Trend
   const fertilityOpt = document.querySelector('#colorMetric option[value="fertility_rate"]');
   fertilityOpt.hidden = !isTrend;
@@ -520,13 +483,10 @@ function handleScenarioChange() {
 function updateMap() {
   if (!geoLayer || !stateData) return;
   const st = getState();
-  if (st.scenario !== 'cooper_center') {
-    document.getElementById('yearDisplay').textContent = st.year;
-  }
+  document.getElementById('yearDisplay').textContent = st.year;
 
-  const isCooper = st.scenario === 'cooper_center';
   const isEnrollProj = st.scenario === 'enrollment_proj';
-  const effectiveMetric = ((isCooper || isEnrollProj) && st.metric === 'enrollment_decline_pct') ? 'enrollment_change_cc' : st.metric;
+  const effectiveMetric = (isEnrollProj && st.metric === 'enrollment_decline_pct') ? 'enrollment_change_cc' : st.metric;
 
   updateStats(st.scenario, st.year);
   updateLegend(effectiveMetric);
@@ -567,8 +527,8 @@ function updateMap() {
     // currently-visible sticky tooltip updates in place without flicker.
     const declinePctTip = yr.enrollment_decline_pct;
     const closuresTxt = Math.round(yr.expected_closures);
-    const changeLabel = ((isCooper || isEnrollProj) && declinePctTip < 0) ? 'Gain' : 'Decline';
-    const changeTxt = ((isCooper || isEnrollProj) && declinePctTip < 0)
+    const changeLabel = (isEnrollProj && declinePctTip < 0) ? 'Gain' : 'Decline';
+    const changeTxt = (isEnrollProj && declinePctTip < 0)
       ? '+' + Math.abs(declinePctTip).toFixed(1)
       : declinePctTip.toFixed(1);
     const tooltipContent = '<strong>' + d.state + '</strong><br>' +
@@ -641,9 +601,6 @@ async function init() {
   document.getElementById('yearSlider').addEventListener('input', updateMap);
   document.querySelectorAll('input[name="scenario"]').forEach(function(r) {
     r.addEventListener('change', handleScenarioChange);
-  });
-  document.querySelectorAll('input[name="cooper_year"]').forEach(function(r) {
-    r.addEventListener('change', updateMap);
   });
   document.getElementById('colorMetric').addEventListener('change', updateMap);
 
