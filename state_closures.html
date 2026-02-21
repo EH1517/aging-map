@@ -525,7 +525,8 @@ function updateMap() {
   }
 
   const isCooper = st.scenario === 'cooper_center';
-  const effectiveMetric = (isCooper && st.metric === 'enrollment_decline_pct') ? 'enrollment_change_cc' : st.metric;
+  const isEnrollProj = st.scenario === 'enrollment_proj';
+  const effectiveMetric = ((isCooper || isEnrollProj) && st.metric === 'enrollment_decline_pct') ? 'enrollment_change_cc' : st.metric;
 
   updateStats(st.scenario, st.year);
   updateLegend(effectiveMetric);
@@ -566,8 +567,8 @@ function updateMap() {
     // currently-visible sticky tooltip updates in place without flicker.
     const declinePctTip = yr.enrollment_decline_pct;
     const closuresTxt = Math.round(yr.expected_closures);
-    const changeLabel = (isCooper && declinePctTip < 0) ? 'Gain' : 'Decline';
-    const changeTxt = (isCooper && declinePctTip < 0)
+    const changeLabel = ((isCooper || isEnrollProj) && declinePctTip < 0) ? 'Gain' : 'Decline';
+    const changeTxt = ((isCooper || isEnrollProj) && declinePctTip < 0)
       ? '+' + Math.abs(declinePctTip).toFixed(1)
       : declinePctTip.toFixed(1);
     const tooltipContent = '<strong>' + d.state + '</strong><br>' +
