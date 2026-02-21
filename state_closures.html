@@ -63,6 +63,19 @@
   .stat-value.closures { color: var(--orange); }
   .stat-value.students { color: var(--accent); }
 
+  .stats-context {
+    background: #fafaf7;
+    border-bottom: 1px solid #e8e4d8;
+    padding: 5px 24px;
+    font-size: 11px;
+    color: #777;
+    text-align: center;
+    font-style: italic;
+    line-height: 1.5;
+  }
+  .stats-context a { color: #888; text-decoration: underline; }
+  .stats-context strong { color: #555; font-style: normal; }
+
   .map-container { height: calc(100vh - 250px); min-height: 400px; position: relative; }
   #map { height: 100%; width: 100%; }
 
@@ -186,6 +199,10 @@
   </div>
 </div>
 
+<div class="stats-context">
+  <strong>External benchmark:</strong> Brookings Institution (2024) projects <strong>2.9M&ndash;8.5M fewer</strong> traditional public school students nationally by 2050 &mdash; the lower end assumes COVID-era enrollment shifts from public schools to private schools/homeschooling were temporary; the upper end assumes they persist. These maps reflect demographic factors only and represent the lower bound of that range. &nbsp;<a href="https://www.brookings.edu/articles/declining-public-school-enrollment/" target="_blank">Source</a>
+</div>
+
 <div class="map-container">
   <div id="map"></div>
   <div class="legend" id="legend"></div>
@@ -201,9 +218,7 @@
   <div class="control-group">
     <label>Scenario</label>
     <div class="toggle-group">
-      <input type="radio" name="scenario" id="scenCensus" value="census" checked>
-      <label class="tbtn" for="scenCensus">Census Bureau</label>
-      <input type="radio" name="scenario" id="scenTrend" value="state_trend">
+      <input type="radio" name="scenario" id="scenTrend" value="state_trend" checked>
       <label class="tbtn" for="scenTrend">State Fertility Trend</label>
       <input type="radio" name="scenario" id="scenEnroll" value="enrollment_proj">
       <label class="tbtn" for="scenEnroll">NCES / State Gvm't</label>
@@ -239,21 +254,20 @@
     <div class="full">
       <h3>Reading the Map</h3>
       <p>Use the <strong>Color by</strong> dropdown to switch between four views of the data:</p>
-      <p>&bull; <strong>Enrollment Decline %</strong> &mdash; The projected percentage change in K&ndash;12 enrollment relative to 2022. For the Census Bureau and State Fertility Trend scenarios, this reflects births entering the school pipeline; for NCES / State Gvm't, it reflects official enrollment projections; for Cooper Center, it reflects changes in projected school-age population (ages 5&ndash;17). On the Cooper Center tab this metric uses a diverging color scale: green = projected enrollment <em>growth</em>, red = projected decline.</p>
+      <p>&bull; <strong>Enrollment Decline %</strong> &mdash; The projected percentage change in K&ndash;12 enrollment relative to 2022. For the State Fertility Trend scenario, this reflects births entering the school pipeline; for NCES / State Gvm't, it reflects official enrollment projections; for Cooper Center, it reflects changes in projected school-age population (ages 5&ndash;17). On the Cooper Center tab this metric uses a diverging color scale: green = projected enrollment <em>growth</em>, red = projected decline.</p>
       <p>&bull; <strong>Expected Closures</strong> &mdash; The estimated number of traditional public schools likely to close by the selected year, based on how projected enrollment decline interacts with each state's existing school-size distribution. States with many small rural schools show higher counts even at moderate decline rates. States projected to gain enrollment (Cooper Center) show zero expected closures, since population growth implies net school openings rather than closures.</p>
       <p>&bull; <strong>Closure Risk %</strong> &mdash; Expected closures as a share of each state's total school count. Normalizes for state size to reveal which states face the highest <em>proportion</em> of schools at risk.</p>
-      <p>&bull; <strong>Fertility Rate</strong> &mdash; The projected general fertility rate (births per 1,000 women ages 15&ndash;44). Only meaningful for the Census Bureau and State Fertility Trend scenarios, which are built directly from fertility trajectories. Lower rates (darker red) indicate states where the birth decline is most severe.</p>
+      <p>&bull; <strong>Fertility Rate</strong> &mdash; The projected general fertility rate (births per 1,000 women ages 15&ndash;44). Only available for the State Fertility Trend scenario, which is built directly from fertility trajectories. Lower rates (darker red) indicate states where the birth decline is most severe.</p>
     </div>
     <div>
       <h3>Scenario Descriptions</h3>
-      <p><strong>Census Bureau:</strong> Applies the Census 2023 National Population Projections national birth trajectory uniformly to every state's 2022 fertility rate. All states are assumed to follow the same national decline curve regardless of their recent local trends. Enrollment is then derived via a pipeline lag model (see below).</p>
-      <p><strong>State Fertility Trend:</strong> Extrapolates each state's own 2005&ndash;2022 fertility decline rate forward, with a floor of 35 births per 1,000 women 15&ndash;44. States with steep recent declines (e.g., Utah, Idaho) diverge sharply from the Census Bureau scenario. Like the Census Bureau scenario, enrollment is derived via the pipeline lag model.</p>
+      <p><strong>State Fertility Trend:</strong> Extrapolates each state's own 2005&ndash;2022 fertility decline rate forward, with a floor of 35 births per 1,000 women 15&ndash;44. States with steep recent declines (e.g., Utah, Idaho) see sharper projected enrollment falls. Enrollment is derived via the pipeline lag model (see below).</p>
       <p><strong>NCES / State Gvm't:</strong> Bypasses the fertility model entirely and uses published enrollment projections directly. The base source is the NCES state-level enrollment forecast (all 50 states + DC, projected to 2050). Where state education agencies or planning offices have published more recent or detailed projections, those override the NCES figures: California (CA DOF), Colorado (CO DOLA county-level age data), Iowa (IA DOE), Maryland (MD Dept of Planning), North Carolina, Florida, Texas, Virginia, and Wisconsin. Projections ending before 2040 are linearly extrapolated; an asterisk (*) in the popup trend table marks extrapolated years. This scenario incorporates migration, demographic composition, and local modeling decisions&mdash;not just fertility.</p>
       <p><strong>Cooper Center (2030 only):</strong> Uses the UVA Weldon Cooper Center 2024 National Population Projections, released July 1, 2024, and benchmarked to the 2020 Decennial Census. The Cooper Center applies the Hamilton&ndash;Perry cohort-component method, which ages forward 2020 Census cohorts using Cohort Change Ratios (CCRs) averaged across 2000&ndash;2010 and 2010&ndash;2020. CCRs implicitly capture both mortality and net migration (domestic and international)&mdash;no immigration variable is modeled explicitly. School-age population (ages 5&ndash;17) is constructed as: <em>ages 5&ndash;9 + ages 10&ndash;14 + &frac35; &times; ages 15&ndash;19</em>. Enrollment change equals the ratio of projected 2030 school-age population to the 2020 baseline, applied to NCES 2022 enrollment. The 2040 year is excluded: because the Hamilton&ndash;Perry method compounds historical assumptions twice over 20 years, the 2040 outputs diverge 15&ndash;20 percentage points from state agency projections in most states and are not considered reliable. The Cooper Center's implicit immigration assumption&mdash;the 2000&ndash;2020 historical average of roughly 1.0&ndash;1.3 million net immigrants per year&mdash;is higher than CBO's current policy-realistic projection for the late 2020s, so this scenario may overstate school-age growth in high-immigration-dependent states.</p>
     </div>
     <div>
       <h3>Pipeline Lag Model</h3>
-      <p>Applies to the <strong>Census Bureau</strong> and <strong>State Fertility Trend</strong> scenarios only. K&ndash;12 enrollment in year Y draws on 13 birth cohorts: children born in years Y&minus;17 (entering 12th grade) through Y&minus;5 (entering kindergarten). Only cohorts born after 2022 carry the projected fertility decline; earlier cohorts are already in the pipeline at their historical size.</p>
+      <p>Applies to the <strong>State Fertility Trend</strong> scenario only. K&ndash;12 enrollment in year Y draws on 13 birth cohorts: children born in years Y&minus;17 (entering 12th grade) through Y&minus;5 (entering kindergarten). Only cohorts born after 2022 carry the projected fertility decline; earlier cohorts are already in the pipeline at their historical size.</p>
       <p>The share of the pipeline affected by post-2022 fertility trends therefore grows over time: 0 of 13 cohorts are post-2022 as of 2027 (meaning no effect yet), roughly 3 of 13 by 2030 (~23%), and all 13 of 13 by 2040 (100% effect). Enrollment decline for year Y = (post-2022 cohorts / 13) &times; (average projected birth decline for those cohorts).</p>
       <p>The NCES / State Gvm't and Cooper Center scenarios do not use this model&mdash;they draw directly from published projections or school-age population counts that already incorporate the full demographic picture.</p>
       <h3 style="margin-top:14px">School-Size Distribution</h3>
@@ -272,7 +286,7 @@
          &bull; Any school with overall decline &gt;10%: <strong>1.5%/year</strong> &mdash; schools under meaningful enrollment pressure.<br>
          &bull; All other schools: <strong>0.75%/year</strong> &mdash; background closure rate reflecting consolidations, facility issues, and other non-enrollment factors.</p>
       <p>Cumulative closure probability over time: <em>P(closure by year Y) = 1 &minus; (1 &minus; p<sub>annual</sub>)<sup>Y &minus; 2025</sup></em>. Expected closures for a bucket = school count &times; cumulative probability. All buckets are summed for the state total.</p>
-      <p>These rates are calibrated against Brookings Institution (2024) historical closure data, which found annual closure rates below 0.5%/yr for most states and a maximum of 2.06%/yr (Washington D.C.) in the 2012&ndash;2024 period. The forward-looking rates used here are set above historical averages to reflect worsening enrollment conditions, but are intentionally conservative relative to the prior model version, which used rates up to 10%/yr for tiny schools&mdash;a figure inconsistent with any observed state-level closure pattern.</p>
+      <p>These rates are calibrated against Brookings Institution (2024) historical closure data, which found annual closure rates below 0.5%/yr for most states and a maximum of 2.06%/yr (Washington D.C.) in the 2012&ndash;2024 period. The forward-looking rates used here are set above historical averages to reflect worsening enrollment conditions while remaining consistent with the range of observed state-level closure patterns.</p>
       <p>States projected to <em>gain</em> school-age population under the Cooper Center scenario are assigned zero expected closures&mdash;population growth implies net school openings, not closures.</p>
       <p>These probabilities are model estimates intended to be illustrative. Actual closure decisions depend on district fiscal capacity, state aid formulas, local politics, building conditions, and proximity to alternatives&mdash;none of which are captured here.</p>
     </div>
@@ -289,7 +303,7 @@
     </div>
     <div class="full">
       <h3>Important Caveats</h3>
-      <p>The <strong>Census Bureau</strong> and <strong>State Fertility Trend</strong> scenarios isolate the fertility channel only. They do not account for domestic or international migration, school consolidation decisions, charter school competition, private school trends, or changes in birth timing. They show what would happen to enrollment if only fertility rates change as projected&mdash;a useful bound but not a complete forecast.</p>
+      <p>The <strong>State Fertility Trend</strong> scenario isolates the fertility channel only. It does not account for domestic or international migration, school consolidation decisions, charter school competition, private school trends, or changes in birth timing. It shows what would happen to enrollment if only fertility rates change as projected&mdash;a useful lower-bound estimate but not a complete forecast.</p>
       <p>The <strong>NCES / State Gvm't</strong> scenario incorporates richer demographic inputs but is only as good as the underlying agency projections, which vary in methodology, vintage, and local assumptions. Linear extrapolation beyond an agency's published horizon introduces additional uncertainty.</p>
       <p>The <strong>Cooper Center</strong> 2030 scenario is the most demographically comprehensive (births, mortality, and domestic + international migration are all embedded), but its immigration assumptions reflect 2000&ndash;2020 historical patterns that may not hold under current federal policy. State-level enrollment figures are particularly uncertain for fast-growing states that depend heavily on international immigration. The 2040 horizon is excluded as unreliable.</p>
       <p>Across all scenarios, the <strong>closure model is illustrative</strong>. Actual school closures depend on district fiscal capacity, state aid, local politics, charter competition, demographic concentration within districts, and decisions by school boards&mdash;none of which are captured here. This tool is intended to highlight which states face the most structural enrollment pressure, not to predict specific closures.</p>
@@ -387,7 +401,7 @@ function updateLegend(metric) {
 }
 
 function updateStats(scenario, year) {
-  const scenarioLabels = {census: 'Census Bureau', state_trend: 'State Trend', enrollment_proj: 'NCES / State Projections', cooper_center: 'Cooper Center'};
+  const scenarioLabels = {state_trend: 'State Fertility Trend', enrollment_proj: 'NCES / State Gvm\'t', cooper_center: 'Cooper Center'};
   document.getElementById('statScenario').textContent = (scenarioLabels[scenario] || scenario) + ' ' + year;
 
   let totalDecline = 0, totalClosures = 0, totalEnrollment = 0, totalProjected = 0, count = 0;
@@ -488,11 +502,16 @@ function buildPopup(abbr, scenario, year) {
 }
 
 function handleScenarioChange() {
-  const isCooper = document.querySelector('input[name="scenario"]:checked').value === 'cooper_center';
+  const scenario = document.querySelector('input[name="scenario"]:checked').value;
+  const isCooper = scenario === 'cooper_center';
+  const isTrend = scenario === 'state_trend';
   document.querySelector('.slider-container').style.display = isCooper ? 'none' : '';
   document.getElementById('cooperYearControl').style.display = isCooper ? '' : 'none';
-  // Fertility Rate color metric has no meaning in Cooper Center
-  if (isCooper && document.getElementById('colorMetric').value === 'fertility_rate') {
+  // Fertility Rate color metric only meaningful for State Fertility Trend
+  const fertilityOpt = document.querySelector('#colorMetric option[value="fertility_rate"]');
+  fertilityOpt.hidden = !isTrend;
+  fertilityOpt.disabled = !isTrend;
+  if (!isTrend && document.getElementById('colorMetric').value === 'fertility_rate') {
     document.getElementById('colorMetric').value = 'enrollment_decline_pct';
   }
   updateMap();
