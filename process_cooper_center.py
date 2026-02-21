@@ -157,7 +157,7 @@ def main():
             'cooper_school_age_proj': round(sa_2020),
         }
 
-        for yr in [2030, 2040]:
+        for yr in [2030]:  # 2040 excluded: Cooper Center methodology unreliable at 20yr horizon
             sa_yr = school_age[yr].get(abbr)
             if not sa_yr:
                 continue
@@ -165,15 +165,16 @@ def main():
             ratio = sa_yr / sa_2020
             decline_pct = round((1.0 - ratio) * 100, 2)
 
-            # For closure model: clamp growth states to 0 decline ratio
-            # (growing states still have background closure rate)
-            closure_decline_ratio = max(0.0, 1.0 - ratio)
-
             proj_enrollment = round(current_enrollment * ratio)
 
-            # Closures accumulate from 2025 (same reference as other scenarios)
-            years_from_2025 = max(yr - 2025, 1)
-            closures = compute_closures(closure_decline_ratio, buckets, years_from_2025)
+            # Growing states expect net school openings, not closures — zero out.
+            # Declining states: use actual decline ratio for closure model.
+            if ratio >= 1.0:
+                closures = 0.0
+            else:
+                closure_decline_ratio = 1.0 - ratio
+                years_from_2025 = max(yr - 2025, 1)
+                closures = compute_closures(closure_decline_ratio, buckets, years_from_2025)
 
             scenario_data[str(yr)] = {
                 'enrollment_decline_pct': decline_pct,
@@ -190,19 +191,16 @@ def main():
     print(f"Added: {added}, skipped: {skipped}")
 
     print("\nSample results:")
-    header = f"{'State':4}  {'2030 decline':>12}  {'2030 closures':>13}  {'2040 decline':>12}  {'2040 closures':>13}"
+    header = f"{'State':4}  {'2030 decline':>12}  {'2030 closures':>13}"
     print(header)
     print("-" * len(header))
-    for abbr in ['MI', 'WI', 'TX', 'FL', 'WV', 'OH', 'CA', 'UT']:
+    for abbr in ['MI', 'WI', 'TX', 'FL', 'WV', 'OH', 'CA', 'UT', 'MT', 'UT']:
         if abbr not in state_proj:
             continue
         s = state_proj[abbr]['scenarios'].get('cooper_center', {})
         d30 = s.get('2030', {})
-        d40 = s.get('2040', {})
         print(f"{abbr:4}  {d30.get('enrollment_decline_pct','?'):>11}%  "
-              f"{d30.get('expected_closures','?'):>13}  "
-              f"{d40.get('enrollment_decline_pct','?'):>11}%  "
-              f"{d40.get('expected_closures','?'):>13}")
+              f"{d30.get('expected_closures','?'):>13}")
 
     # Write back
     with open(proj_path, 'w') as f:
