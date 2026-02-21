@@ -120,13 +120,17 @@ PROJECTION_YEARS = [2025, 2027, 2030, 2033, 2035, 2037, 2040]
 
 FERTILITY_FLOOR = 35.0  # births per 1,000 women 15-44
 
-# Annual closure probabilities by condition
+# Annual closure probabilities by condition.
+# Recalibrated against Brookings (2024) historical closure rate data:
+# most states <0.5%/yr historically; highest observed = DC at 2.06%/yr.
+# Forward-looking rates are set above historical averages to reflect
+# worsening enrollment conditions, but scaled to remain defensible.
 CLOSURE_PROBS = {
-    'large_stable':   0.01,   # >300 students, <10% decline
-    'medium_decline': 0.02,   # 200-300, >10% decline
-    'small_steep':    0.05,   # 100-199, >25% decline
-    'tiny':           0.10,   # <100 students
-    'default':        0.01,   # fallback
+    'large_stable':   0.0075,  # background rate: stable or growing schools
+    'medium_decline': 0.015,   # any school with >10% enrollment decline
+    'small_steep':    0.03,    # 100-199 projected enr with >25% decline
+    'tiny':           0.04,    # <100 projected enrollment
+    'default':        0.0075,  # fallback
 }
 
 

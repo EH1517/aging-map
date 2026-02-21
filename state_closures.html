@@ -267,13 +267,14 @@
     <div>
       <h3>Closure Probability Model</h3>
       <p>For each school-size bucket, the model projects a post-decline enrollment by multiplying the bucket's average enrollment by <em>(1 &minus; enrollment decline rate)</em>. That projected enrollment, combined with the magnitude of decline, determines an annual closure probability:</p>
-      <p>&bull; Projected enrollment &lt;100 students: <strong>10%/year</strong> &mdash; very small schools face high closure risk regardless of the cause of low enrollment.<br>
-         &bull; Projected enrollment 100&ndash;199 <em>and</em> overall decline &gt;25%: <strong>5%/year</strong> &mdash; small schools facing steep decline.<br>
-         &bull; Projected enrollment 200&ndash;299 <em>and</em> decline &gt;10%, or any school with decline &gt;10%: <strong>2%/year</strong> &mdash; moderate-sized schools under meaningful enrollment pressure.<br>
-         &bull; All other schools: <strong>1%/year</strong> &mdash; background closure rate reflecting consolidations, facility issues, and other non-enrollment factors.</p>
+      <p>&bull; Projected enrollment &lt;100 students: <strong>4%/year</strong> &mdash; very small schools face elevated closure risk from low enrollment regardless of cause.<br>
+         &bull; Projected enrollment 100&ndash;199 <em>and</em> overall decline &gt;25%: <strong>3%/year</strong> &mdash; small schools facing steep decline.<br>
+         &bull; Any school with overall decline &gt;10%: <strong>1.5%/year</strong> &mdash; schools under meaningful enrollment pressure.<br>
+         &bull; All other schools: <strong>0.75%/year</strong> &mdash; background closure rate reflecting consolidations, facility issues, and other non-enrollment factors.</p>
       <p>Cumulative closure probability over time: <em>P(closure by year Y) = 1 &minus; (1 &minus; p<sub>annual</sub>)<sup>Y &minus; 2025</sup></em>. Expected closures for a bucket = school count &times; cumulative probability. All buckets are summed for the state total.</p>
-      <p>States projected to <em>gain</em> school-age population under the Cooper Center scenario are assigned zero expected closures&mdash;population growth implies net school openings, not closures, and the background rate does not meaningfully apply in a growth context.</p>
-      <p>These probabilities are model estimates intended to be illustrative, not empirically calibrated predictions. They do not account for district consolidation policy, charter school competition, state aid formulas, or local political decisions.</p>
+      <p>These rates are calibrated against Brookings Institution (2024) historical closure data, which found annual closure rates below 0.5%/yr for most states and a maximum of 2.06%/yr (Washington D.C.) in the 2012&ndash;2024 period. The forward-looking rates used here are set above historical averages to reflect worsening enrollment conditions, but are intentionally conservative relative to the prior model version, which used rates up to 10%/yr for tiny schools&mdash;a figure inconsistent with any observed state-level closure pattern.</p>
+      <p>States projected to <em>gain</em> school-age population under the Cooper Center scenario are assigned zero expected closures&mdash;population growth implies net school openings, not closures.</p>
+      <p>These probabilities are model estimates intended to be illustrative. Actual closure decisions depend on district fiscal capacity, state aid formulas, local politics, building conditions, and proximity to alternatives&mdash;none of which are captured here.</p>
     </div>
     <div>
       <h3>Data Sources</h3>

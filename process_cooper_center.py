@@ -35,10 +35,10 @@ FIPS_TO_ABBR = {
 }
 
 CLOSURE_PROBS = {
-    'large_stable':   0.01,
-    'medium_decline': 0.02,
-    'small_steep':    0.05,
-    'tiny':           0.10,
+    'large_stable':   0.0075,
+    'medium_decline': 0.015,
+    'small_steep':    0.03,
+    'tiny':           0.04,
 }
 
 
