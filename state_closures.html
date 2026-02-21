@@ -270,8 +270,9 @@
       <p>For each school-size bucket, the model projects a post-decline enrollment by multiplying the bucket's average enrollment by <em>(1 &minus; enrollment decline rate)</em>. That projected enrollment, combined with the magnitude of decline, determines an annual closure probability:</p>
       <p>&bull; Projected enrollment &lt;100 students: <strong>4%/year</strong> &mdash; very small schools face elevated closure risk from low enrollment regardless of cause.<br>
          &bull; Projected enrollment 100&ndash;199 <em>and</em> overall decline &gt;25%: <strong>3%/year</strong> &mdash; small schools facing steep decline.<br>
-         &bull; Any school with overall decline &gt;10%: <strong>1.5%/year</strong> &mdash; schools under meaningful enrollment pressure.<br>
-         &bull; All other schools: <strong>0.75%/year</strong> &mdash; background closure rate reflecting consolidations, facility issues, and other non-enrollment factors.</p>
+         &bull; Overall decline &gt;10%: <strong>1.5%/year</strong> &mdash; schools under meaningful enrollment pressure.<br>
+         &bull; Overall decline 3&ndash;10%: <strong>1.0%/year</strong> &mdash; schools under mild but real enrollment pressure.<br>
+         &bull; Decline &le;3%: <strong>0.75%/year</strong> &mdash; background closure rate reflecting consolidations, facility issues, and other non-enrollment factors.</p>
       <p>Cumulative closure probability over time: <em>P(closure by year Y) = 1 &minus; (1 &minus; p<sub>annual</sub>)<sup>Y &minus; 2025</sup></em>. Expected closures for a bucket = school count &times; cumulative probability. All buckets are summed for the state total.</p>
       <p>These rates are calibrated against Brookings Institution (2024) historical closure data, which found annual closure rates below 0.5%/yr for most states and a maximum of 2.06%/yr (Washington D.C.) in the 2012&ndash;2024 period. The forward-looking rates used here are set above historical averages to reflect worsening enrollment conditions while remaining consistent with the range of observed state-level closure patterns.</p>
       <p>States projected to <em>gain</em> enrollment under any scenario are assigned zero expected closures&mdash;population growth implies net school openings, not closures.</p>

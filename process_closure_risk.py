@@ -126,8 +126,9 @@ FERTILITY_FLOOR = 35.0  # births per 1,000 women 15-44
 # Forward-looking rates are set above historical averages to reflect
 # worsening enrollment conditions, but scaled to remain defensible.
 CLOSURE_PROBS = {
-    'large_stable':   0.0075,  # background rate: stable or growing schools
-    'medium_decline': 0.015,   # any school with >10% enrollment decline
+    'large_stable':   0.0075,  # background rate: <=3% decline
+    'mild_decline':   0.010,   # 3-10% decline
+    'medium_decline': 0.015,   # >10% decline
     'small_steep':    0.03,    # 100-199 projected enr with >25% decline
     'tiny':           0.04,    # <100 projected enrollment
     'default':        0.0075,  # fallback
@@ -552,11 +553,11 @@ def estimate_closures(fertility_projections, state_schools):
                         annual_prob = CLOSURE_PROBS['small_steep']
                         risk_severe += count
                         risk_elevated += count
-                    elif projected_enr < 300 and decline_ratio > 0.10:
-                        annual_prob = CLOSURE_PROBS['medium_decline']
-                        risk_elevated += count
                     elif decline_ratio > 0.10:
                         annual_prob = CLOSURE_PROBS['medium_decline']
+                        risk_elevated += count
+                    elif decline_ratio > 0.03:
+                        annual_prob = CLOSURE_PROBS['mild_decline']
                         risk_elevated += count
                     else:
                         annual_prob = CLOSURE_PROBS['large_stable']
