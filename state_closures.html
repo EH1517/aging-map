@@ -550,7 +550,7 @@ function updateMap() {
 async function init() {
   try {
     const [projRes, geoRes] = await Promise.all([
-      fetch('state_projections.json'),
+      fetch('state_projections.json?v=' + Date.now()),
       fetch('states.json')
     ]);
     stateData = await projRes.json();
